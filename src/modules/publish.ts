@@ -160,7 +160,7 @@ async function extractVideoCover(
 }
 
 interface PublishArgs {
-  clientId: string;
+  clientId: string | null;
   platforms: string[];
   publishType: "video" | "article" | "imageText";
   publishChannel?: string;
@@ -652,8 +652,11 @@ export async function publishContent(params: {
     // platforms 使用平台中文名数组
     const platformNames = platformCodes.map(code => PLATFORM_RULES[code]?.name).filter(Boolean);
     
+    // 云发布时 clientId 设置为 null，本机发布时使用传入的 clientId
+    const finalClientId = finalPublishChannel === "cloud" ? null : (params.clientId || null);
+    
     let publishArgs: PublishArgs = {
-      clientId: params.clientId || "",
+      clientId: finalClientId,
       platforms: platformNames,  // 使用平台中文名数组
       publishType,
       publishChannel: finalPublishChannel,

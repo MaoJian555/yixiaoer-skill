@@ -26,9 +26,6 @@ export default async function run(action: string, params: any): Promise<SkillRes
       case 'content-overviews':
         return await overviews.getContentOverviews(params);
 
-      case 'publish':
-        return await publish.publishContent(params);
-
       case 'publish-flow':
         return await publishFlow.publishFlow(params);
 
@@ -41,7 +38,7 @@ export default async function run(action: string, params: any): Promise<SkillRes
       default:
         return {
           success: false,
-          message: `❌ 不支持的操作: ${action}\n\n支持的操作:\n- login: 用户名密码登录\n- logout: 退出登录\n- list-accounts: 获取账号列表\n- get-teams: 获取团队列表\n- account-overviews: 账号概览-新版\n- content-overviews: 作品数据列表\n- publish: 发布内容\n- publish-flow: 一键登录/选团队/发布\n- get-publish-records: 获取发布记录\n- upload-url: 获取上传URL`
+          message: `❌ 不支持的操作: ${action}\n\n支持的操作:\n- login: 用户名密码登录\n- logout: 退出登录\n- list-accounts: 获取账号列表\n- get-teams: 获取团队列表\n- account-overviews: 账号概览-新版\n- content-overviews: 作品数据列表\n- publish-flow: 一键登录/选团队/发布（唯一推荐）\n- get-publish-records: 获取发布记录\n- upload-url: 获取上传URL`
         };
     }
   } catch (error) {

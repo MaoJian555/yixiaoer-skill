@@ -1,6 +1,6 @@
 {
   "name": "yixiaoer-skill",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "蚁小二自媒体多平台发布插件，支持40+平台一键分发，支持抖音、小红书、B站、视频号等",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

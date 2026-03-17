@@ -1,6 +1,6 @@
 {
   "name": "yixiaoer-skill",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "蚁小二自媒体多平台发布插件，支持40+平台一键分发，支持抖音、小红书、B站、视频号等",
   "author": "",
   "license": "MIT",
@@ -192,7 +192,7 @@
     },
     {
       "action": "publish-flow",
-      "description": "一键完成登录、选择团队、校验账号并提交发布任务",
+      "description": "【唯一推荐】发布内容到自媒体平台（自动完成登录、选择团队、校验账号并提交发布任务）。当用户说\"发布视频\"、\"发到抖音\"、\"分发内容\"、\"发布作品\"等意图时，必须使用此接口。",
       "parameters": [
         {
           "name": "username",
@@ -267,8 +267,8 @@
         {
           "name": "clientId",
           "type": "string",
-          "required": true,
-          "description": "设备号/客户端ID（发布必填）"
+          "required": false,
+          "description": "设备号/客户端ID。云发布（默认）时必须设置为 null，本机发布时传设备ID"
         },
         {
           "name": "coverKey",
