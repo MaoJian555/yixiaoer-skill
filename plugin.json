@@ -1,0 +1,442 @@
+{
+  "name": "yixiaoer-skill",
+  "version": "1.0.0",
+  "description": "蚁小二自媒体多平台发布插件，支持40+平台一键分发，支持抖音、小红书、B站、视频号等",
+  "author": "",
+  "license": "MIT",
+  "homepage": "https://www.yixiaoer.cn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaoJian555/yixiaoer-skill.git"
+  },
+  "downloadUrl": "https://github.com/MaoJian555/yixiaoer-skill",
+  "keywords": [
+    "yixiaoer",
+    "yixiaoer-skill",
+    "openclaw",
+    "clawhub",
+    "自媒体",
+    "内容分发",
+    "抖音",
+    "小红书",
+    "视频号",
+    "B站",
+    "微博",
+    "多平台发布",
+    "蚁小二",
+    "自媒体发布",
+    "一键分发"
+  ],
+  "skills": [
+    {
+      "action": "login",
+      "description": "用户名密码登录蚁小二账号",
+      "parameters": [
+        {
+          "name": "username",
+          "type": "string",
+          "required": true,
+          "description": "蚁小二用户名/手机号"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "description": "蚁小二密码"
+        }
+      ],
+      "permissions": ["network"]
+    },
+    {
+      "action": "logout",
+      "description": "退出登录，清除缓存的凭证",
+      "parameters": [],
+      "permissions": []
+    },
+    {
+      "action": "list-accounts",
+      "description": "获取已绑定的自媒体账号列表（仅登录有效账号，loginStatus=1）",
+      "parameters": [
+        {
+          "name": "page",
+          "type": "number",
+          "required": false,
+          "default": 1,
+          "description": "页码"
+        },
+        {
+          "name": "size",
+          "type": "number",
+          "required": false,
+          "default": 20,
+          "description": "每页数量"
+        }
+      ],
+      "permissions": ["network"]
+    },
+    {
+      "action": "get-teams",
+      "description": "获取团队列表",
+      "parameters": [],
+      "permissions": ["network"]
+    },
+    {
+      "action": "account-overviews",
+      "description": "账号概览-新版（/platform-accounts/overviews-v2）",
+      "parameters": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "平台中文名，如：抖音/小红书"
+        },
+        {
+          "name": "page",
+          "type": "number",
+          "required": false,
+          "default": 1,
+          "description": "页码"
+        },
+        {
+          "name": "size",
+          "type": "number",
+          "required": false,
+          "default": 10,
+          "description": "每页数量"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "账号名称查询"
+        },
+        {
+          "name": "group",
+          "type": "string",
+          "required": false,
+          "description": "分组查询"
+        },
+        {
+          "name": "loginStatus",
+          "type": "number",
+          "required": false,
+          "default": 1,
+          "description": "账号状态 0未登录 1成功 2过期失效 3失败"
+        }
+      ],
+      "permissions": ["network"]
+    },
+    {
+      "action": "content-overviews",
+      "description": "作品数据列表（/contents/overviews）",
+      "parameters": [
+        {
+          "name": "platformAccountId",
+          "type": "string",
+          "required": false,
+          "description": "媒体账号ID"
+        },
+        {
+          "name": "publishUserId",
+          "type": "string",
+          "required": false,
+          "description": "发布人ID"
+        },
+        {
+          "name": "platform",
+          "type": "string",
+          "required": false,
+          "description": "平台中文名"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "enum": ["all", "video", "miniVideo", "dynamic", "article"],
+          "description": "作品类型"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "作品标题"
+        },
+        {
+          "name": "publishStartTime",
+          "type": "number",
+          "required": false,
+          "description": "发布开始时间（时间戳）"
+        },
+        {
+          "name": "publishEndTime",
+          "type": "number",
+          "required": false,
+          "description": "发布结束时间（时间戳）"
+        },
+        {
+          "name": "page",
+          "type": "number",
+          "required": false,
+          "default": 1,
+          "description": "页码"
+        },
+        {
+          "name": "size",
+          "type": "number",
+          "required": false,
+          "default": 10,
+          "description": "每页数量"
+        }
+      ],
+      "permissions": ["network"]
+    },
+    {
+      "action": "publish-flow",
+      "description": "一键完成登录、选择团队、校验账号并提交发布任务",
+      "parameters": [
+        {
+          "name": "username",
+          "type": "string",
+          "required": false,
+          "description": "蚁小二用户名/手机号（未登录时必填）"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": false,
+          "description": "蚁小二密码（未登录时必填）"
+        },
+        {
+          "name": "teamId",
+          "type": "string",
+          "required": false,
+          "description": "团队ID（与 teamName 二选一，至少提供一个）"
+        },
+        {
+          "name": "teamName",
+          "type": "string",
+          "required": false,
+          "description": "团队名称（与 teamId 二选一，至少提供一个）"
+        },
+        {
+          "name": "platforms",
+          "type": "array",
+          "required": true,
+          "items": { "type": "string" },
+          "description": "发布平台列表（用于生成平台表单与规则校验），只允许平台 code 或平台标准中文名（必须与 src/config/platform-rules.ts 中定义一致），不支持别名。示例：['抖音']、['XiaoHongShu']。注意：当前实现仅支持单一账号发布（platformAccountId 单个），多平台会复用同一账号。完整列表见 README（展示不包含豆包）。"
+        },
+        {
+          "name": "platformAccountId",
+          "type": "string",
+          "required": true,
+          "description": "平台账号ID（从list-accounts获取，仅登录有效账号）"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": "内容标题"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "description": "内容正文/描述（article/imageText 必填，作为 publishArgs.content）"
+        },
+        {
+          "name": "desc",
+          "type": "string",
+          "required": false,
+          "description": "发布描述/摘要"
+        },
+        {
+          "name": "publishType",
+          "type": "string",
+          "required": true,
+          "enum": ["video", "article", "imageText", "image"],
+          "description": "内容类型：video-视频, article-文章, imageText-图文（image 为兼容别名）。video 必填: videoPath；imageText 必填: imagePaths；article/imageText 需要 description 作为正文。"
+        },
+        {
+          "name": "publishChannel",
+          "type": "string",
+          "required": false,
+          "enum": ["local", "cloud"],
+          "default": "cloud",
+          "description": "发布渠道：cloud-云发布（默认）, local-本机发布。如云发布失败（代理未设置），会自动降级为本机发布"
+        },
+        {
+          "name": "clientId",
+          "type": "string",
+          "required": true,
+          "description": "设备号/客户端ID（发布必填）"
+        },
+        {
+          "name": "coverKey",
+          "type": "string",
+          "required": false,
+          "description": "素材coverKey（上传后返回）"
+        },
+        {
+          "name": "videoPath",
+          "type": "string",
+          "required": false,
+          "description": "视频路径（本地路径或OSS URL），publishType=video 必填"
+        },
+        {
+          "name": "videoSize",
+          "type": "number",
+          "required": false,
+          "description": "视频文件大小（字节）"
+        },
+        {
+          "name": "videoDuration",
+          "type": "number",
+          "required": false,
+          "description": "视频时长（秒）"
+        },
+        {
+          "name": "videoWidth",
+          "type": "number",
+          "required": false,
+          "default": 1080,
+          "description": "视频宽度"
+        },
+        {
+          "name": "videoHeight",
+          "type": "number",
+          "required": false,
+          "default": 1920,
+          "description": "视频高度"
+        },
+        {
+          "name": "coverPath",
+          "type": "string",
+          "required": false,
+          "description": "封面图片路径（本地路径或OSS URL）"
+        },
+        {
+          "name": "verticalCoverPath",
+          "type": "string",
+          "required": false,
+          "description": "文章竖版封面路径（本地路径或URL）"
+        },
+        {
+          "name": "verticalCoverKey",
+          "type": "string",
+          "required": false,
+          "description": "文章竖版封面 key（已上传时可直接传）"
+        },
+        {
+          "name": "imagePaths",
+          "type": "array",
+          "required": false,
+          "items": { "type": "string" },
+          "description": "图文图片列表（本地路径或OSS URL），publishType=imageText/image 必填"
+        },
+        {
+          "name": "coverSize",
+          "type": "number",
+          "required": false,
+          "description": "封面图片大小（字节）"
+        },
+        {
+          "name": "verticalCoverSize",
+          "type": "number",
+          "required": false,
+          "description": "竖版封面大小（字节）"
+        },
+        {
+          "name": "coverWidth",
+          "type": "number",
+          "required": false,
+          "default": 1080,
+          "description": "封面宽度"
+        },
+        {
+          "name": "verticalCoverWidth",
+          "type": "number",
+          "required": false,
+          "description": "竖版封面宽度"
+        },
+        {
+          "name": "coverHeight",
+          "type": "number",
+          "required": false,
+          "default": 1920,
+          "description": "封面高度"
+        },
+        {
+          "name": "verticalCoverHeight",
+          "type": "number",
+          "required": false,
+          "description": "竖版封面高度"
+        },
+        {
+          "name": "publishContentId",
+          "type": "string",
+          "required": false,
+          "description": "文章发布内容ID"
+        },
+        {
+          "name": "createType",
+          "type": "number",
+          "required": false,
+          "description": "创作类型（文章平台可能需要）"
+        },
+        {
+          "name": "pubType",
+          "type": "number",
+          "required": false,
+          "description": "发布类型（文章平台可能需要）"
+        }
+      ],
+      "permissions": ["network"]
+    },
+    {
+      "action": "get-publish-records",
+      "description": "获取发布记录列表",
+      "parameters": [
+        {
+          "name": "page",
+          "type": "number",
+          "required": false,
+          "default": 1,
+          "description": "页码"
+        },
+        {
+          "name": "size",
+          "type": "number",
+          "required": false,
+          "default": 20,
+          "description": "每页数量"
+        }
+      ],
+      "permissions": ["network"]
+    },
+    {
+      "action": "upload-url",
+      "description": "获取文件上传URL（用于上传视频/图片到云存储）",
+      "parameters": [
+        {
+          "name": "fileName",
+          "type": "string",
+          "required": true,
+          "description": "文件名，如：video.mp4"
+        },
+        {
+          "name": "fileSize",
+          "type": "number",
+          "required": true,
+          "description": "文件大小（字节）"
+        },
+        {
+          "name": "contentType",
+          "type": "string",
+          "required": true,
+          "description": "文件MIME类型，如：video/mp4, image/jpeg"
+        }
+      ],
+      "permissions": ["network"]
+    }
+  ]
+}
