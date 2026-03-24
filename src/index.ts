@@ -2,18 +2,42 @@ import * as account from './modules/account.js';
 import * as publish from './modules/publish.js';
 import * as publishFlow from './modules/publish-flow.js';
 import * as overviews from './modules/overviews.js';
-import { getClient } from './api/client.js';
-import type { SkillResult, UploadUrlParams } from './types.js';
+import { getClient, setApiKey, createClient } from './api/client.js';
+import type { SkillResult, UploadUrlParams, OpenClawApi } from './types.js';
 
-export default async function run(action: string, params: any): Promise<SkillResult> {
+let openclawApi: OpenClawApi | null = null;
+
+function initApiKey(): void {
+  if (openclawApi?.config?.apiKey) {
+    setApiKey(openclawApi.config.apiKey);
+    console.log('✅ 已加载配置的 API Key');
+  }
+}
+
+function ensureClient(): void {
+  if (openclawApi?.config?.apiKey) {
+    setApiKey(openclawApi.config.apiKey);
+  }
+  getClient();
+}
+
+export default function plugin(api?: OpenClawApi): ((action: string, params: any) => Promise<SkillResult>) | void {
+  if (api) {
+    openclawApi = api;
+    initApiKey();
+    ensureClient();
+    
+    if (api.logger?.info) {
+      api.logger.info('yixiaoer-skill 插件已加载');
+    }
+  }
+
+  return run;
+}
+
+async function run(action: string, params: any): Promise<SkillResult> {
   try {
     switch (action) {
-      case 'login':
-        return await account.login(params);
-
-      case 'logout':
-        return await account.logout();
-
       case 'list-accounts':
         return await account.listAccounts(params);
 
@@ -38,7 +62,7 @@ export default async function run(action: string, params: any): Promise<SkillRes
       default:
         return {
           success: false,
-          message: `❌ 不支持的操作: ${action}\n\n支持的操作:\n- login: 用户名密码登录\n- logout: 退出登录\n- list-accounts: 获取账号列表\n- get-teams: 获取团队列表\n- account-overviews: 账号概览-新版\n- content-overviews: 作品数据列表\n- publish-flow: 一键登录/选团队/发布（唯一推荐）\n- get-publish-records: 获取发布记录\n- upload-url: 获取上传URL`
+          message: `❌ 不支持的操作: ${action}\n\n支持的操作:\n- list-accounts: 获取账号列表\n- get-teams: 获取团队列表\n- account-overviews: 账号概览-新版\n- content-overviews: 作品数据列表\n- publish-flow: 一键发布（唯一推荐）\n- get-publish-records: 获取发布记录\n- upload-url: 获取上传URL`
         };
     }
   } catch (error) {

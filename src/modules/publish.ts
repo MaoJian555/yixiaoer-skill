@@ -8,6 +8,7 @@ import {
 } from "../config/platform-rules.js";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 import axios from "axios";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
@@ -157,6 +158,89 @@ async function extractVideoCover(
         size: `${width}x${height}`,
       });
   });
+}
+
+async function downloadRemoteCover(
+  remoteUrl: string,
+  client: ReturnType<typeof getClient>
+): Promise<{ key: string; size: number; width: number; height: number }> {
+  console.log(`📥 正在下载远程封面: ${remoteUrl}`);
+  
+  const tempDir = path.join(os.tmpdir(), 'yixiaoer-covers');
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+  
+  const fileName = `cover_${Date.now()}.jpg`;
+  const tempPath = path.join(tempDir, fileName);
+  
+  const response = await axios.get(remoteUrl, {
+    responseType: 'arraybuffer',
+    timeout: 60000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    maxRedirects: 5
+  });
+  
+  fs.writeFileSync(tempPath, Buffer.from(response.data));
+  const stats = fs.statSync(tempPath);
+  
+  console.log(`📤 正在上传下载的封面到OSS: ${tempPath}`);
+  const result = await uploadFileToOss(tempPath, client);
+  console.log(`✅ 封面上传成功, key: ${result.key}`);
+  
+  let width = 1080;
+  let height = 1920;
+  
+  const contentType = response.headers['content-type'] || '';
+  if (contentType.includes('image')) {
+    try {
+      const image = await axios.get(remoteUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000
+      });
+      const imageData = Buffer.from(image.data);
+      const dims = getImageDimensions(imageData);
+      if (dims) {
+        width = dims.width;
+        height = dims.height;
+      }
+    } catch {
+      console.log('⚠️ 无法获取图片尺寸，使用默认值');
+    }
+  }
+  
+  try {
+    fs.unlinkSync(tempPath);
+  } catch {
+    console.log('⚠️ 清理临时文件失败');
+  }
+  
+  return { key: result.key, size: result.size, width, height };
+}
+
+function getImageDimensions(buffer: Buffer): { width: number; height: number } | null {
+  if (buffer.length < 24) return null;
+  
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8) {
+    let offset = 2;
+    while (offset < buffer.length) {
+      if (buffer[offset] !== 0xFF) break;
+      const marker = buffer[offset + 1];
+      
+      if (marker === 0xC0 || marker === 0xC2) {
+        const height = buffer.readUInt16BE(offset + 5);
+        const width = buffer.readUInt16BE(offset + 7);
+        return { width, height };
+      }
+      
+      const length = buffer.readUInt16BE(offset + 2);
+      offset += 2 + length;
+    }
+  }
+  
+  return null;
 }
 
 interface PublishArgs {
@@ -513,26 +597,29 @@ export async function publishContent(params: {
       };
     }
 
-    // 封面图片：远端 http 用 path，本地上传用 key
+    // 封面图片：远端 http 自动下载上传到OSS获取coverKey
     if (params.coverPath) {
       if (params.coverPath.startsWith('http')) {
+        console.log(`🖼️ 检测到远端封面URL，自动下载并上传到OSS...`);
+        const coverInfo = await downloadRemoteCover(params.coverPath, client);
+        
         if (publishType === "article") {
           const covers = contentPublishForm.covers || [];
           covers.push({
-            path: params.coverPath,
-            width: params.coverWidth || 0,
-            height: params.coverHeight || 0,
-            size: params.coverSize || 0,
+            key: coverInfo.key,
+            width: params.coverWidth || coverInfo.width,
+            height: params.coverHeight || coverInfo.height,
+            size: coverInfo.size,
           });
           contentPublishForm.covers = covers;
-          // 文章使用远端URL时，也需要设置 coverKey（虽然可能无效，但保持结构完整）
-          accountForm.coverKey = '';
+          accountForm.coverKey = coverInfo.key;
         } else {
+          accountForm.coverKey = coverInfo.key;
           accountForm.cover = {
-            path: params.coverPath,
-            width: params.coverWidth || 1080,
-            height: params.coverHeight || 1920,
-            size: params.coverSize || 0,
+            key: coverInfo.key,
+            width: params.coverWidth || coverInfo.width,
+            height: params.coverHeight || coverInfo.height,
+            size: coverInfo.size,
           };
         }
       } else {
@@ -549,7 +636,6 @@ export async function publishContent(params: {
             size: coverInfo.size,
           });
           contentPublishForm.covers = covers;
-          // 文章也需要设置 coverKey
           accountForm.coverKey = coverInfo.key;
         } else {
           accountForm.coverKey = coverInfo.key;
@@ -563,15 +649,17 @@ export async function publishContent(params: {
       }
     }
 
-    // 文章竖版封面：远端 http 用 path，本地上传用 key
+    // 文章竖版封面：远端 http 自动下载上传到OSS获取coverKey
     if (publishType === "article" && params.verticalCoverPath) {
       const verticalCovers = contentPublishForm.verticalCovers || [];
       if (params.verticalCoverPath.startsWith('http')) {
+        console.log(`🖼️ 检测到远端竖版封面URL，自动下载并上传到OSS...`);
+        const verticalInfo = await downloadRemoteCover(params.verticalCoverPath, client);
         verticalCovers.push({
-          path: params.verticalCoverPath,
-          width: params.verticalCoverWidth || 0,
-          height: params.verticalCoverHeight || 0,
-          size: params.verticalCoverSize || 0,
+          key: verticalInfo.key,
+          width: params.verticalCoverWidth || verticalInfo.width,
+          height: params.verticalCoverHeight || verticalInfo.height,
+          size: verticalInfo.size,
         });
       } else {
         console.log(`📤 正在上传竖版封面到OSS: ${params.verticalCoverPath}`);

@@ -1,5 +1,17 @@
 export interface YixiaoerConfig {
   baseUrl?: string;
+  apiKey?: string;
+}
+
+export interface OpenClawApi {
+  config?: {
+    apiKey?: string;
+  };
+  logger?: {
+    info?: (msg: string) => void;
+    warn?: (msg: string) => void;
+    error?: (msg: string) => void;
+  };
 }
 
 export interface LoginResponse {

@@ -29,31 +29,6 @@
   ],
   "skills": [
     {
-      "action": "login",
-      "description": "用户名密码登录蚁小二账号",
-      "parameters": [
-        {
-          "name": "username",
-          "type": "string",
-          "required": true,
-          "description": "蚁小二用户名/手机号"
-        },
-        {
-          "name": "password",
-          "type": "string",
-          "required": true,
-          "description": "蚁小二密码"
-        }
-      ],
-      "permissions": ["network"]
-    },
-    {
-      "action": "logout",
-      "description": "退出登录，清除缓存的凭证",
-      "parameters": [],
-      "permissions": []
-    },
-    {
       "action": "list-accounts",
       "description": "获取已绑定的自媒体账号列表（仅登录有效账号，loginStatus=1）",
       "parameters": [
@@ -192,20 +167,8 @@
     },
     {
       "action": "publish-flow",
-      "description": "【唯一推荐】发布内容到自媒体平台（自动完成登录、选择团队、校验账号并提交发布任务）。当用户说\"发布视频\"、\"发到抖音\"、\"分发内容\"、\"发布作品\"等意图时，必须使用此接口。",
+      "description": "【唯一推荐】发布内容到自媒体平台（通过配置的 API Key 进行身份验证，自动完成选择团队、校验账号并提交发布任务）。当用户说"发布视频"、"发到抖音"、"分发内容"、"发布作品"等意图时，必须使用此接口。",
       "parameters": [
-        {
-          "name": "username",
-          "type": "string",
-          "required": false,
-          "description": "蚁小二用户名/手机号（未登录时必填）"
-        },
-        {
-          "name": "password",
-          "type": "string",
-          "required": false,
-          "description": "蚁小二密码（未登录时必填）"
-        },
         {
           "name": "teamId",
           "type": "string",

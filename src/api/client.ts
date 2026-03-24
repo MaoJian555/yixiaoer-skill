@@ -8,6 +8,7 @@ import type {
 } from "../types.js";
 
 let cachedCredentials: { username: string; password: string } | null = null;
+let configuredApiKey: string | null = null;
 
 export class YixiaoerClient {
   private client: AxiosInstance;
@@ -80,7 +81,9 @@ export class YixiaoerClient {
     );
 
     this.client.interceptors.request.use((config) => {
-      if (this.accessToken) {
+      if (configuredApiKey) {
+        config.headers["Authorization"] = configuredApiKey;
+      } else if (this.accessToken) {
         config.headers["Authorization"] = this.accessToken;
       }
       return config;
@@ -250,9 +253,9 @@ let clientInstance: YixiaoerClient | null = null;
 
 export function getClient(): YixiaoerClient {
   if (!clientInstance) {
-    throw new Error("请先调用 login 登录");
+    createClient();
   }
-  return clientInstance;
+  return clientInstance!;
 }
 
 export function createClient(baseUrl?: string): YixiaoerClient {
@@ -268,4 +271,8 @@ export function clearClient(): void {
     clientInstance.logout();
     clientInstance = null;
   }
+}
+
+export function setApiKey(apiKey: string): void {
+  configuredApiKey = apiKey;
 }
