@@ -41,8 +41,8 @@ async function run(action: string, params: any): Promise<SkillResult> {
       case 'list-accounts':
         return await account.listAccounts(params);
 
-      case 'get-teams':
-        return await account.getTeams();
+      case 'get-publish-preset':
+        return await account.getPublishPreset(params);
 
       case 'account-overviews':
         return await overviews.getAccountOverviewsV2(params);
@@ -50,19 +50,32 @@ async function run(action: string, params: any): Promise<SkillResult> {
       case 'content-overviews':
         return await overviews.getContentOverviews(params);
 
-      case 'publish-flow':
-        return await publishFlow.publishFlow(params);
+      case 'publish-video':
+        return await publishFlow.publishFlow({ ...params, publishType: 'video' });
+
+      case 'publish-image-text':
+        return await publishFlow.publishFlow({ ...params, publishType: 'imageText' });
+
+      case 'publish-article':
+        return await publishFlow.publishFlow({ ...params, publishType: 'article' });
 
       case 'get-publish-records':
         return await publish.getPublishRecords(params);
 
       case 'upload-url':
         return await getUploadUrl(params);
+        
+      case 'get-extended-api-docs':
+        return {
+          success: true,
+          message: `你可以通过以下链接获取蚁小二 4.0 的完整 LLMS 文档以识别更多 API（如用户管理、设备日志、任务集详情等）：\nhttps://s.apifox.cn/e66df935-0c39-44d0-8096-abd39417fa6a/llms.txt`,
+          data: { url: "https://s.apifox.cn/e66df935-0c39-44d0-8096-abd39417fa6a/llms.txt" }
+        };
 
       default:
         return {
           success: false,
-          message: `❌ 不支持的操作: ${action}\n\n支持的操作:\n- list-accounts: 获取账号列表\n- get-teams: 获取团队列表\n- account-overviews: 账号概览-新版\n- content-overviews: 作品数据列表\n- publish-flow: 一键发布（唯一推荐）\n- get-publish-records: 获取发布记录\n- upload-url: 获取上传URL`
+          message: `❌ 不支持的操作: ${action}\n\n支持的操作:\n- list-accounts: 获取账号列表\n- account-overviews: 账号概览-新版\n- content-overviews: 作品数据列表\n- publish-video: 发布视频\n- publish-image-text: 发布图文\n- publish-article: 发布文章\n- get-publish-records: 获取发布记录\n- upload-url: 获取上传URL`
         };
     }
   } catch (error) {

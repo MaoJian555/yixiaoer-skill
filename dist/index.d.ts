@@ -1,2 +1,2 @@
-import type { SkillResult } from './types.js';
-export default function run(action: string, params: any): Promise<SkillResult>;
+import type { SkillResult, OpenClawApi } from './types.js';
+export default function plugin(api?: OpenClawApi): ((action: string, params: any) => Promise<SkillResult>) | void;

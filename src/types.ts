@@ -104,3 +104,56 @@ export interface ContentOverviewsParams {
   page?: number;
   size?: number;
 }
+
+export interface PublishPreset {
+  videoCategory?: string;
+  videoTopics?: string;
+  articleCategory?: string;
+  articleTopics?: string;
+  dynamicCategory?: string;
+  dynamicTopics?: string;
+}
+
+export interface VideoFormItem {
+  duration: number;
+  width: number;
+  height: number;
+  size: number;
+  key: string;
+  path: string;
+}
+
+export interface ImageFormItem {
+  width: number;
+  height: number;
+  size: number;
+  key: string;
+  path: string;
+}
+
+export interface PublishAccountRequestNew {
+  platformAccountId: string;
+  coverKey?: string;
+  cover?: ImageFormItem;
+  video?: VideoFormItem;
+  images?: string[];
+  publishContentId?: string;
+  contentPublishForm?: any;
+}
+
+export interface CloudPublishArgs {
+  accountForms: PublishAccountRequestNew[];
+  content?: string;
+}
+
+export interface CloudTaskPushRequest {
+  taskSetId?: string;
+  coverKey: string;
+  desc?: string;
+  clientId?: string;
+  platforms: string[];
+  publishType: "video" | "imageText" | "article";
+  isDraft: boolean;
+  publishArgs: CloudPublishArgs;
+  publishChannel: "local" | "cloud";
+}

@@ -1,5 +1,5 @@
-import type { ListAccountsParams, LoginParams, SkillResult } from '../types.js';
-export declare function login(params: LoginParams): Promise<SkillResult>;
-export declare function logout(): Promise<SkillResult>;
+import type { ListAccountsParams, SkillResult } from '../types.js';
 export declare function listAccounts(params: ListAccountsParams): Promise<SkillResult>;
-export declare function getTeams(): Promise<SkillResult>;
+export declare function getPublishPreset(params: {
+    platformAccountId: string;
+}): Promise<SkillResult>;

@@ -44,10 +44,11 @@ export declare function publishContent(params: {
     /** 竖版封面大小（字节） */
     verticalCoverSize?: number;
     /** 发布渠道：local-客户端发布, cloud-云发布 */
+    /** 发布模式：local-本机发布, cloud-云端发布 */
     publishChannel?: string;
-    /** 客户端ID（云发布时需要） */
+    /** 客户端识别符，本机发布必填 */
     clientId?: string;
-    /** 代理ID（用于本机发布） */
+    /** 代理节点ID */
     proxyId?: string;
     /** 封面宽度 */
     coverWidth?: number;
@@ -57,4 +58,6 @@ export declare function publishContent(params: {
     coverHeight?: number;
     /** 竖版封面高度 */
     verticalCoverHeight?: number;
+    /** 平台特有表单数据 */
+    contentPublishForm?: Record<string, any>;
 }): Promise<SkillResult>;

@@ -305,10 +305,10 @@ function normalizePublishType(
 function handleError(error: Error): SkillResult {
   const errorMsg = error.message;
 
-  if (errorMsg.includes("登录已失效") || errorMsg.includes("请重新登录")) {
+  if (errorMsg.includes("登录已失效") || errorMsg.includes("请重新登录") || errorMsg.includes("apiKey") || errorMsg.includes("401")) {
     return {
       success: false,
-      message: `❌ ${errorMsg}，请重新调用 login 命令`,
+      message: `❌ ${errorMsg}，请检查您的“龙虾插件” API Key 是否配置正确且有效。`,
     };
   }
 
@@ -436,10 +436,11 @@ export async function publishContent(params: {
   /** 竖版封面大小（字节） */
   verticalCoverSize?: number;
   /** 发布渠道：local-客户端发布, cloud-云发布 */
+  /** 发布模式：local-本机发布, cloud-云端发布 */
   publishChannel?: string;
-  /** 客户端ID（云发布时需要） */
+  /** 客户端识别符，本机发布必填 */
   clientId?: string;
-  /** 代理ID（用于本机发布） */
+  /** 代理节点ID */
   proxyId?: string;
   /** 封面宽度 */
   coverWidth?: number;
@@ -449,15 +450,21 @@ export async function publishContent(params: {
   coverHeight?: number;
   /** 竖版封面高度 */
   verticalCoverHeight?: number;
+  /** 平台特有表单数据 */
+  contentPublishForm?: Record<string, any>;
 }): Promise<SkillResult> {
   try {
     const client = getClient();
 
     if (!params.platforms || params.platforms.length === 0) {
-      return {
-        success: false,
-        message: "❌ 参数错误: 请至少选择一个发布平台",
-      };
+      if (params.platformAccountId) {
+        // Fallback: if platforms is empty but platformAccountId is provided, we'll try to get platform from account list later
+      } else {
+        return {
+          success: false,
+          message: "❌ 参数错误: 请选择发布平台或提供 platformAccountId",
+        };
+      }
     }
 
     const publishType = normalizePublishType(params.publishType);
@@ -470,6 +477,21 @@ export async function publishContent(params: {
 
     const publishChannel = params.publishChannel || "cloud";
     
+    // Validate account and get platform name if platforms is missing
+    const accounts = await client.getAccounts({ page: 1, size: 200, loginStatus: 1 });
+    const accountMatch = accounts.data?.find(a => a.id === params.platformAccountId);
+    
+    if (!accountMatch) {
+      return {
+        success: false,
+        message: "❌ 未找到有效的 platformAccountId，请先用 list-accounts 获取登录有效账号",
+      };
+    }
+
+    const targetPlatforms = params.platforms && params.platforms.length > 0 
+      ? params.platforms 
+      : [accountMatch.platformName];
+
     // 有 clientId 则是本机发布，没有则是云发布
     const finalPublishChannel = params.clientId ? "local" : publishChannel;
 
@@ -505,7 +527,7 @@ export async function publishContent(params: {
 
     const platformForms: Record<string, any> = {};
     const platformCodes: string[] = [];
-    for (const platformInput of params.platforms) {
+    for (const platformInput of targetPlatforms) {
       const platformCode = normalizePlatform(platformInput);
       if (!platformCode) {
         return {
@@ -517,14 +539,10 @@ export async function publishContent(params: {
 
       const rule = PLATFORM_RULES[platformCode];
       if (!rule) {
-        return {
-          success: false,
-          message: `❌ 不支持的平台: ${platformInput}`,
-        };
+        continue;
       }
 
       const validation = validatePublishParams(platformCode, publishType);
-
       if (!validation.valid) {
         return {
           success: false,
@@ -532,25 +550,35 @@ export async function publishContent(params: {
         };
       }
 
-      const platformForm = { formType: "task" };
+      // Merge dynamic form params
+      const platformForm = { 
+        formType: "task",
+        ...(params.contentPublishForm || {}) 
+      };
       const platformName = PLATFORM_RULES[platformCode]?.name;
       if (platformName) {
         platformForms[platformName] = platformForm;
       }
     }
 
-    const contentPublishForm = buildContentPublishForm(publishType, {
+    const baseForm = buildContentPublishForm(publishType, {
       title: params.title,
       description: params.description,
       createType: params.createType,
       pubType: params.pubType,
     });
 
+    // Merge shared content form with platform specific form
+    const finalContentPublishForm = {
+      ...baseForm,
+      ...(params.contentPublishForm || {})
+    };
+
     const accountForm: AccountForm = {
       platformAccountId: params.platformAccountId,
       publishContentId: params.publishContentId,
       coverKey: params.coverKey,
-      contentPublishForm,
+      contentPublishForm: finalContentPublishForm,
       mediaId: "",
     };
 
@@ -604,14 +632,14 @@ export async function publishContent(params: {
         const coverInfo = await downloadRemoteCover(params.coverPath, client);
         
         if (publishType === "article") {
-          const covers = contentPublishForm.covers || [];
+          const covers = finalContentPublishForm.covers || [];
           covers.push({
             key: coverInfo.key,
             width: params.coverWidth || coverInfo.width,
             height: params.coverHeight || coverInfo.height,
             size: coverInfo.size,
           });
-          contentPublishForm.covers = covers;
+          finalContentPublishForm.covers = covers;
           accountForm.coverKey = coverInfo.key;
         } else {
           accountForm.coverKey = coverInfo.key;
@@ -628,14 +656,14 @@ export async function publishContent(params: {
         console.log(`✅ 封面上传成功, key: ${coverInfo.key}`);
 
         if (publishType === "article") {
-          const covers = contentPublishForm.covers || [];
+          const covers = finalContentPublishForm.covers || [];
           covers.push({
             key: coverInfo.key,
             width: params.coverWidth || 0,
             height: params.coverHeight || 0,
             size: coverInfo.size,
           });
-          contentPublishForm.covers = covers;
+          finalContentPublishForm.covers = covers;
           accountForm.coverKey = coverInfo.key;
         } else {
           accountForm.coverKey = coverInfo.key;
@@ -651,7 +679,7 @@ export async function publishContent(params: {
 
     // 文章竖版封面：远端 http 自动下载上传到OSS获取coverKey
     if (publishType === "article" && params.verticalCoverPath) {
-      const verticalCovers = contentPublishForm.verticalCovers || [];
+      const verticalCovers = finalContentPublishForm.verticalCovers || [];
       if (params.verticalCoverPath.startsWith('http')) {
         console.log(`🖼️ 检测到远端竖版封面URL，自动下载并上传到OSS...`);
         const verticalInfo = await downloadRemoteCover(params.verticalCoverPath, client);
@@ -672,29 +700,29 @@ export async function publishContent(params: {
           size: verticalInfo.size,
         });
       }
-      contentPublishForm.verticalCovers = verticalCovers;
+      finalContentPublishForm.verticalCovers = verticalCovers;
     }
 
     // 文章封面/竖版封面直接传 key
     if (publishType === "article" && params.coverKey && !params.coverPath) {
-      const covers = contentPublishForm.covers || [];
+      const covers = finalContentPublishForm.covers || [];
       covers.push({
         key: params.coverKey,
         width: params.coverWidth || 0,
         height: params.coverHeight || 0,
         size: params.coverSize || 0,
       });
-      contentPublishForm.covers = covers;
+      finalContentPublishForm.covers = covers;
     }
     if (publishType === "article" && params.verticalCoverKey && !params.verticalCoverPath) {
-      const verticalCovers = contentPublishForm.verticalCovers || [];
+      const verticalCovers = finalContentPublishForm.verticalCovers || [];
       verticalCovers.push({
         key: params.verticalCoverKey,
         width: params.verticalCoverWidth || 0,
         height: params.verticalCoverHeight || 0,
         size: params.verticalCoverSize || 0,
       });
-      contentPublishForm.verticalCovers = verticalCovers;
+      finalContentPublishForm.verticalCovers = verticalCovers;
     }
 
     // 图文图片：远端 http 用 path，本地上传用 key

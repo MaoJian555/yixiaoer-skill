@@ -5,7 +5,8 @@
 ## 前置条件
 
 1. 注册蚁小二账号，并在后台绑定自媒体账号
-2. 使用 `login` 获取会话
+2. 在插件配置中填写 `apiKey` (从蚁小二后台获取)
+3. 插件会自动在请求头 `Authorization` 中携带该 Key 进行鉴权
 
 ## 安装与构建
 
@@ -16,37 +17,29 @@ npm run build
 
 ## 配置（仅本地测试）
 
-- `YIXIAOER_USERNAME` / `YIXIAOER_PASSWORD`
+- `YIXIAOER_API_KEY` 蚁小二 API Key
 - `YIXIAOER_TEST_VIDEO` 本地测试视频路径
 
 ## 支持的动作
 
-- `login` 用户名密码登录
-- `logout` 退出登录
 - `list-accounts` 获取账号列表（loginStatus=1）
-- `get-teams` 获取团队列表
 - `account-overviews` 账号概览（新版）
 - `content-overviews` 作品数据列表
-- `publish-flow` 一键登录/选团队/发布（唯一推荐入口）
+- `publish-video` 发布视频
+- `publish-image-text` 发布图文
+- `publish-article` 发布文章
 - `get-publish-records` 获取发布记录
 - `upload-url` 获取上传 URL
 
-注意：`publish` 为内部接口，不对外暴露。AI 发布内容时必须使用 `publish-flow`。
+注意：`publish` 为内部接口，不对外暴露。针对不同内容类型，请根据意图选择 `publish-video`、`publish-image-text` 或 `publish-article`。
 
-## 发布流程（简版）
+## 发布流程（标准）
 
-1. `login`
-2. `get-teams`
-3. `list-accounts`
-4. 匹配 `platformAccountId`
-5. 处理素材（远程直用 / 本地 `upload-url`）
-6. 组装发布表单
-7. `publish-flow`
-
-## publish-flow 参数
-
-- `username` / `password`：未登录时必填
-- `teamId` 或 `teamName`：二选一，必须提供
+1. `list-accounts` 获取有效账号列表
+2. 匹配 `platformAccountId`
+3. 按需准备素材（若为本地文件，先通过 `upload-url` 获 Key）
+4. 检查账号发布能力（见下表：平台与支持的发布类型）
+5. 组装表单调用对应发布接口（`publish-video` / `publish-image-text` / `publish-article`）
 
 ## account-overviews 参数
 

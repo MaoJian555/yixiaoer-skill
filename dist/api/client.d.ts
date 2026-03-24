@@ -1,14 +1,9 @@
-import type { YixiaoerConfig, LoginResponse, MediaAccount, TeamInfo } from '../types.js';
+import type { YixiaoerConfig, MediaAccount, TeamInfo } from "../types.js";
 export declare class YixiaoerClient {
     private client;
     private config;
-    private accessToken;
     constructor(config: YixiaoerConfig);
-    private loginInternal;
     request<T = any>(method: string, endpoint: string, data?: any): Promise<T>;
-    login(username: string, password: string): Promise<LoginResponse>;
-    logout(): void;
-    isLoggedIn(): boolean;
     getTeams(): Promise<{
         data: TeamInfo[];
     }>;
@@ -61,14 +56,14 @@ export declare class YixiaoerClient {
         page?: number;
         size?: number;
     }): Promise<any>;
+    getPublishPreset(platformAccountId: string): Promise<any>;
     publishTask(taskData: any): Promise<any>;
     getUploadUrl(fileName: string, fileSize: number, contentType: string): Promise<{
         uploadUrl: string;
         fileKey: string;
     }>;
-    setAccessToken(token: string): void;
-    getAccessToken(): string | null;
 }
 export declare function getClient(): YixiaoerClient;
 export declare function createClient(baseUrl?: string): YixiaoerClient;
 export declare function clearClient(): void;
+export declare function setApiKey(apiKey: string): void;

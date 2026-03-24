@@ -1,46 +1,4 @@
-import { createClient, getClient, clearClient } from '../api/client.js';
-export async function login(params) {
-    try {
-        const { username, password } = params;
-        if (!username || !password) {
-            return {
-                success: false,
-                message: '❌ 参数错误: 请提供用户名和密码'
-            };
-        }
-        const client = createClient();
-        const result = await client.login(username, password);
-        return {
-            success: true,
-            message: `✅ 登录成功！`,
-            data: {
-                token: result.token,
-                expiresIn: result.expiresIn
-            }
-        };
-    }
-    catch (error) {
-        return {
-            success: false,
-            message: `❌ 登录失败: ${error.message}`
-        };
-    }
-}
-export async function logout() {
-    try {
-        clearClient();
-        return {
-            success: true,
-            message: '✅ 已退出登录'
-        };
-    }
-    catch (error) {
-        return {
-            success: false,
-            message: `❌ 退出登录失败: ${error.message}`
-        };
-    }
-}
+import { getClient } from '../api/client.js';
 export async function listAccounts(params) {
     try {
         const client = getClient();
@@ -81,10 +39,10 @@ export async function listAccounts(params) {
     }
     catch (error) {
         const errorMsg = error.message;
-        if (errorMsg.includes('登录已失效') || errorMsg.includes('请重新登录')) {
+        if (errorMsg.includes('认证已失效') || errorMsg.includes('API Key')) {
             return {
                 success: false,
-                message: `❌ ${errorMsg}，请重新调用 login 命令`
+                message: `❌ ${errorMsg}，请检查配置的 API Key`
             };
         }
         return {
@@ -93,39 +51,40 @@ export async function listAccounts(params) {
         };
     }
 }
-export async function getTeams() {
+export async function getPublishPreset(params) {
     try {
         const client = getClient();
-        const response = await client.getTeams();
-        if (!response.data || response.data.length === 0) {
+        const result = await client.getPublishPreset(params.platformAccountId);
+        if (!result) {
             return {
-                success: true,
-                message: '暂无团队',
-                data: { list: [] }
+                success: false,
+                message: "❌ 获取发布预设失败，账号可能不存在或已离线",
             };
         }
-        let message = `👥 共 ${response.data.length} 个团队:\n\n`;
-        for (const team of response.data) {
-            const vipStatus = team.isVip ? '✅ VIP' : '❌ 普通';
-            message += `- ${team.name} (${vipStatus})\n`;
-        }
+        let message = "📋 发布预设信息:\n\n";
+        if (result.videoCategory)
+            message += `🎬 视频分类: ${result.videoCategory}\n`;
+        if (result.videoTopics)
+            message += `🎬 视频话题: ${result.videoTopics}\n`;
+        if (result.articleCategory)
+            message += `📝 文章分类: ${result.articleCategory}\n`;
+        if (result.articleTopics)
+            message += `📝 文章话题: ${result.articleTopics}\n`;
+        if (result.dynamicCategory)
+            message += `🖼️ 图文分类: ${result.dynamicCategory}\n`;
+        if (result.dynamicTopics)
+            message += `🖼️ 图文话题: ${result.dynamicTopics}\n`;
+        message += "\n💡 提示: 在发布请求的 contentPublishForm 中，category 和 tags 字段应参考以上内容。示例: { \"category\": [\"美食\"], \"tags\": [\"健康\"] }";
         return {
             success: true,
             message,
-            data: response
+            data: result,
         };
     }
     catch (error) {
-        const errorMsg = error.message;
-        if (errorMsg.includes('登录已失效') || errorMsg.includes('请重新登录')) {
-            return {
-                success: false,
-                message: `❌ ${errorMsg}，请重新调用 login 命令`
-            };
-        }
         return {
             success: false,
-            message: `❌ 获取团队列表失败: ${errorMsg}`
+            message: `❌ 获取发布预设失败: ${error.message}`,
         };
     }
 }

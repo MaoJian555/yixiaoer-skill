@@ -1,9 +1,5 @@
 import type { SkillResult } from "../types.js";
 interface PublishFlowParams {
-    username?: string;
-    password?: string;
-    teamId?: string;
-    teamName?: string;
     platforms: string[];
     publishType: "video" | "article" | "imageText" | "image";
     platformAccountId: string;
@@ -31,6 +27,7 @@ interface PublishFlowParams {
     verticalCoverWidth?: number;
     coverHeight?: number;
     verticalCoverHeight?: number;
+    contentPublishForm?: Record<string, any>;
 }
 export declare function publishFlow(params: PublishFlowParams): Promise<SkillResult>;
 export {};

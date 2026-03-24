@@ -2,6 +2,7 @@ import { getClient } from "../api/client.js";
 import { PLATFORM_RULES, validatePublishParams, buildContentPublishForm, } from "../config/platform-rules.js";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 import axios from "axios";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
@@ -125,6 +126,75 @@ async function extractVideoCover(videoPath, width = 1080, height = 1920) {
         });
     });
 }
+async function downloadRemoteCover(remoteUrl, client) {
+    console.log(`📥 正在下载远程封面: ${remoteUrl}`);
+    const tempDir = path.join(os.tmpdir(), 'yixiaoer-covers');
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+    }
+    const fileName = `cover_${Date.now()}.jpg`;
+    const tempPath = path.join(tempDir, fileName);
+    const response = await axios.get(remoteUrl, {
+        responseType: 'arraybuffer',
+        timeout: 60000,
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        maxRedirects: 5
+    });
+    fs.writeFileSync(tempPath, Buffer.from(response.data));
+    const stats = fs.statSync(tempPath);
+    console.log(`📤 正在上传下载的封面到OSS: ${tempPath}`);
+    const result = await uploadFileToOss(tempPath, client);
+    console.log(`✅ 封面上传成功, key: ${result.key}`);
+    let width = 1080;
+    let height = 1920;
+    const contentType = response.headers['content-type'] || '';
+    if (contentType.includes('image')) {
+        try {
+            const image = await axios.get(remoteUrl, {
+                responseType: 'arraybuffer',
+                timeout: 30000
+            });
+            const imageData = Buffer.from(image.data);
+            const dims = getImageDimensions(imageData);
+            if (dims) {
+                width = dims.width;
+                height = dims.height;
+            }
+        }
+        catch {
+            console.log('⚠️ 无法获取图片尺寸，使用默认值');
+        }
+    }
+    try {
+        fs.unlinkSync(tempPath);
+    }
+    catch {
+        console.log('⚠️ 清理临时文件失败');
+    }
+    return { key: result.key, size: result.size, width, height };
+}
+function getImageDimensions(buffer) {
+    if (buffer.length < 24)
+        return null;
+    if (buffer[0] === 0xFF && buffer[1] === 0xD8) {
+        let offset = 2;
+        while (offset < buffer.length) {
+            if (buffer[offset] !== 0xFF)
+                break;
+            const marker = buffer[offset + 1];
+            if (marker === 0xC0 || marker === 0xC2) {
+                const height = buffer.readUInt16BE(offset + 5);
+                const width = buffer.readUInt16BE(offset + 7);
+                return { width, height };
+            }
+            const length = buffer.readUInt16BE(offset + 2);
+            offset += 2 + length;
+        }
+    }
+    return null;
+}
 function normalizePlatform(input) {
     if (PLATFORM_RULES[input])
         return input;
@@ -142,10 +212,10 @@ function normalizePublishType(input) {
 }
 function handleError(error) {
     const errorMsg = error.message;
-    if (errorMsg.includes("登录已失效") || errorMsg.includes("请重新登录")) {
+    if (errorMsg.includes("登录已失效") || errorMsg.includes("请重新登录") || errorMsg.includes("apiKey") || errorMsg.includes("401")) {
         return {
             success: false,
-            message: `❌ ${errorMsg}，请重新调用 login 命令`,
+            message: `❌ ${errorMsg}，请检查您的“龙虾插件” API Key 是否配置正确且有效。`,
         };
     }
     return {
@@ -219,10 +289,15 @@ export async function publishContent(params) {
     try {
         const client = getClient();
         if (!params.platforms || params.platforms.length === 0) {
-            return {
-                success: false,
-                message: "❌ 参数错误: 请至少选择一个发布平台",
-            };
+            if (params.platformAccountId) {
+                // Fallback: if platforms is empty but platformAccountId is provided, we'll try to get platform from account list later
+            }
+            else {
+                return {
+                    success: false,
+                    message: "❌ 参数错误: 请选择发布平台或提供 platformAccountId",
+                };
+            }
         }
         const publishType = normalizePublishType(params.publishType);
         if (!publishType) {
@@ -232,6 +307,18 @@ export async function publishContent(params) {
             };
         }
         const publishChannel = params.publishChannel || "cloud";
+        // Validate account and get platform name if platforms is missing
+        const accounts = await client.getAccounts({ page: 1, size: 200, loginStatus: 1 });
+        const accountMatch = accounts.data?.find(a => a.id === params.platformAccountId);
+        if (!accountMatch) {
+            return {
+                success: false,
+                message: "❌ 未找到有效的 platformAccountId，请先用 list-accounts 获取登录有效账号",
+            };
+        }
+        const targetPlatforms = params.platforms && params.platforms.length > 0
+            ? params.platforms
+            : [accountMatch.platformName];
         // 有 clientId 则是本机发布，没有则是云发布
         const finalPublishChannel = params.clientId ? "local" : publishChannel;
         // 本机发布需要 clientId
@@ -262,7 +349,7 @@ export async function publishContent(params) {
         }
         const platformForms = {};
         const platformCodes = [];
-        for (const platformInput of params.platforms) {
+        for (const platformInput of targetPlatforms) {
             const platformCode = normalizePlatform(platformInput);
             if (!platformCode) {
                 return {
@@ -273,10 +360,7 @@ export async function publishContent(params) {
             platformCodes.push(platformCode);
             const rule = PLATFORM_RULES[platformCode];
             if (!rule) {
-                return {
-                    success: false,
-                    message: `❌ 不支持的平台: ${platformInput}`,
-                };
+                continue;
             }
             const validation = validatePublishParams(platformCode, publishType);
             if (!validation.valid) {
@@ -285,23 +369,32 @@ export async function publishContent(params) {
                     message: `❌ 参数验证失败: ${validation.errors.join('; ')}`,
                 };
             }
-            const platformForm = { formType: "task" };
+            // Merge dynamic form params
+            const platformForm = {
+                formType: "task",
+                ...(params.contentPublishForm || {})
+            };
             const platformName = PLATFORM_RULES[platformCode]?.name;
             if (platformName) {
                 platformForms[platformName] = platformForm;
             }
         }
-        const contentPublishForm = buildContentPublishForm(publishType, {
+        const baseForm = buildContentPublishForm(publishType, {
             title: params.title,
             description: params.description,
             createType: params.createType,
             pubType: params.pubType,
         });
+        // Merge shared content form with platform specific form
+        const finalContentPublishForm = {
+            ...baseForm,
+            ...(params.contentPublishForm || {})
+        };
         const accountForm = {
             platformAccountId: params.platformAccountId,
             publishContentId: params.publishContentId,
             coverKey: params.coverKey,
-            contentPublishForm,
+            contentPublishForm: finalContentPublishForm,
             mediaId: "",
         };
         // 视频：远端 http 用 path，本地上传用 key
@@ -344,27 +437,29 @@ export async function publishContent(params) {
                 message: "❌ 图文发布需要提供封面图片或图片列表，请提供 coverPath 或 imagePaths 参数",
             };
         }
-        // 封面图片：远端 http 用 path，本地上传用 key
+        // 封面图片：远端 http 自动下载上传到OSS获取coverKey
         if (params.coverPath) {
             if (params.coverPath.startsWith('http')) {
+                console.log(`🖼️ 检测到远端封面URL，自动下载并上传到OSS...`);
+                const coverInfo = await downloadRemoteCover(params.coverPath, client);
                 if (publishType === "article") {
-                    const covers = contentPublishForm.covers || [];
+                    const covers = finalContentPublishForm.covers || [];
                     covers.push({
-                        path: params.coverPath,
-                        width: params.coverWidth || 0,
-                        height: params.coverHeight || 0,
-                        size: params.coverSize || 0,
+                        key: coverInfo.key,
+                        width: params.coverWidth || coverInfo.width,
+                        height: params.coverHeight || coverInfo.height,
+                        size: coverInfo.size,
                     });
-                    contentPublishForm.covers = covers;
-                    // 文章使用远端URL时，也需要设置 coverKey（虽然可能无效，但保持结构完整）
-                    accountForm.coverKey = '';
+                    finalContentPublishForm.covers = covers;
+                    accountForm.coverKey = coverInfo.key;
                 }
                 else {
+                    accountForm.coverKey = coverInfo.key;
                     accountForm.cover = {
-                        path: params.coverPath,
-                        width: params.coverWidth || 1080,
-                        height: params.coverHeight || 1920,
-                        size: params.coverSize || 0,
+                        key: coverInfo.key,
+                        width: params.coverWidth || coverInfo.width,
+                        height: params.coverHeight || coverInfo.height,
+                        size: coverInfo.size,
                     };
                 }
             }
@@ -373,15 +468,14 @@ export async function publishContent(params) {
                 const coverInfo = await uploadFileToOss(params.coverPath, client);
                 console.log(`✅ 封面上传成功, key: ${coverInfo.key}`);
                 if (publishType === "article") {
-                    const covers = contentPublishForm.covers || [];
+                    const covers = finalContentPublishForm.covers || [];
                     covers.push({
                         key: coverInfo.key,
                         width: params.coverWidth || 0,
                         height: params.coverHeight || 0,
                         size: coverInfo.size,
                     });
-                    contentPublishForm.covers = covers;
-                    // 文章也需要设置 coverKey
+                    finalContentPublishForm.covers = covers;
                     accountForm.coverKey = coverInfo.key;
                 }
                 else {
@@ -395,15 +489,17 @@ export async function publishContent(params) {
                 }
             }
         }
-        // 文章竖版封面：远端 http 用 path，本地上传用 key
+        // 文章竖版封面：远端 http 自动下载上传到OSS获取coverKey
         if (publishType === "article" && params.verticalCoverPath) {
-            const verticalCovers = contentPublishForm.verticalCovers || [];
+            const verticalCovers = finalContentPublishForm.verticalCovers || [];
             if (params.verticalCoverPath.startsWith('http')) {
+                console.log(`🖼️ 检测到远端竖版封面URL，自动下载并上传到OSS...`);
+                const verticalInfo = await downloadRemoteCover(params.verticalCoverPath, client);
                 verticalCovers.push({
-                    path: params.verticalCoverPath,
-                    width: params.verticalCoverWidth || 0,
-                    height: params.verticalCoverHeight || 0,
-                    size: params.verticalCoverSize || 0,
+                    key: verticalInfo.key,
+                    width: params.verticalCoverWidth || verticalInfo.width,
+                    height: params.verticalCoverHeight || verticalInfo.height,
+                    size: verticalInfo.size,
                 });
             }
             else {
@@ -417,28 +513,28 @@ export async function publishContent(params) {
                     size: verticalInfo.size,
                 });
             }
-            contentPublishForm.verticalCovers = verticalCovers;
+            finalContentPublishForm.verticalCovers = verticalCovers;
         }
         // 文章封面/竖版封面直接传 key
         if (publishType === "article" && params.coverKey && !params.coverPath) {
-            const covers = contentPublishForm.covers || [];
+            const covers = finalContentPublishForm.covers || [];
             covers.push({
                 key: params.coverKey,
                 width: params.coverWidth || 0,
                 height: params.coverHeight || 0,
                 size: params.coverSize || 0,
             });
-            contentPublishForm.covers = covers;
+            finalContentPublishForm.covers = covers;
         }
         if (publishType === "article" && params.verticalCoverKey && !params.verticalCoverPath) {
-            const verticalCovers = contentPublishForm.verticalCovers || [];
+            const verticalCovers = finalContentPublishForm.verticalCovers || [];
             verticalCovers.push({
                 key: params.verticalCoverKey,
                 width: params.verticalCoverWidth || 0,
                 height: params.verticalCoverHeight || 0,
                 size: params.verticalCoverSize || 0,
             });
-            contentPublishForm.verticalCovers = verticalCovers;
+            finalContentPublishForm.verticalCovers = verticalCovers;
         }
         // 图文图片：远端 http 用 path，本地上传用 key
         if (publishType === "imageText" && params.imagePaths && params.imagePaths.length > 0) {

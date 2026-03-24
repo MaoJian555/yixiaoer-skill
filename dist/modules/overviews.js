@@ -1,10 +1,10 @@
 import { getClient } from "../api/client.js";
 function handleError(error) {
     const errorMsg = error.message;
-    if (errorMsg.includes("登录已失效") || errorMsg.includes("请重新登录")) {
+    if (errorMsg.includes("登录已失效") || errorMsg.includes("请重新登录") || errorMsg.includes("apiKey") || errorMsg.includes("401")) {
         return {
             success: false,
-            message: `❌ ${errorMsg}，请重新调用 login 命令`,
+            message: `❌ ${errorMsg}，请检查您的“龙虾插件” API Key 是否配置正确且有效。`,
         };
     }
     return {

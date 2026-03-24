@@ -2,18 +2,15 @@ import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import type {
   YixiaoerConfig,
   ApiResponse,
-  LoginResponse,
   MediaAccount,
   TeamInfo,
 } from "../types.js";
 
-let cachedCredentials: { username: string; password: string } | null = null;
 let configuredApiKey: string | null = null;
 
 export class YixiaoerClient {
   private client: AxiosInstance;
   private config: YixiaoerConfig;
-  private accessToken: string | null = null;
 
   constructor(config: YixiaoerConfig) {
     this.config = config;
@@ -29,31 +26,6 @@ export class YixiaoerClient {
     this.client.interceptors.response.use(
       (response) => response.data,
       async (error) => {
-        const status = error.response?.status;
-
-        if (status === 401) {
-          console.log("🔄 Token已失效，尝试重新登录...");
-
-          if (cachedCredentials) {
-            try {
-              await this.loginInternal(
-                cachedCredentials.username,
-                cachedCredentials.password,
-              );
-              console.log("✅ 重新登录成功，正在重试请求...");
-
-              const originalRequest = error.config;
-              originalRequest.headers["Authorization"] = this.accessToken;
-              return this.client.request(originalRequest);
-            } catch (reloginError) {
-              cachedCredentials = null;
-              throw new Error("登录已失效，请重新登录");
-            }
-          } else {
-            throw new Error("登录已失效，请重新登录");
-          }
-        }
-
         const apiResponse = error.response?.data as ApiResponse;
         let message = apiResponse?.message || error.message;
 
@@ -74,6 +46,8 @@ export class YixiaoerClient {
           message = `请求参数错误: ${message}`;
         } else if (message.includes("403") || message.includes("Forbidden")) {
           message = "没有权限执行此操作";
+        } else if (error.response?.status === 401) {
+          message = "认证已失效，请检查 API Key 是否正确";
         }
 
         throw new Error(`蚁小二API错误: ${message}`);
@@ -83,26 +57,9 @@ export class YixiaoerClient {
     this.client.interceptors.request.use((config) => {
       if (configuredApiKey) {
         config.headers["Authorization"] = configuredApiKey;
-      } else if (this.accessToken) {
-        config.headers["Authorization"] = this.accessToken;
       }
       return config;
     });
-  }
-
-  private async loginInternal(
-    username: string,
-    password: string,
-  ): Promise<void> {
-    const response = await this.request<{ authorization: string }>(
-      "POST",
-      "/users/auth/v2",
-      {
-        username,
-        password,
-      },
-    );
-    this.accessToken = response.authorization;
   }
 
   async request<T = any>(
@@ -121,26 +78,6 @@ export class YixiaoerClient {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await this.client.request(config)) as any;
     return response.data as T;
-  }
-
-  async login(username: string, password: string): Promise<LoginResponse> {
-    cachedCredentials = { username, password };
-    await this.loginInternal(username, password);
-
-    return {
-      token: this.accessToken!,
-      expiresIn: 7 * 24 * 3600,
-      user: { id: "", username },
-    };
-  }
-
-  logout(): void {
-    this.accessToken = null;
-    cachedCredentials = null;
-  }
-
-  isLoggedIn(): boolean {
-    return !!this.accessToken;
   }
 
   async getTeams(): Promise<{ data: TeamInfo[] }> {
@@ -213,6 +150,13 @@ export class YixiaoerClient {
     return this.request("GET", "/taskSets", params || { page: 1, size: 20 });
   }
 
+  async getPublishPreset(platformAccountId: string): Promise<any> {
+    return this.request(
+      "GET",
+      `/v2/platform/accounts/${platformAccountId}/publish-preset`,
+    );
+  }
+
   async publishTask(taskData: any): Promise<any> {
     return this.request("POST", "/taskSets/v2", taskData);
   }
@@ -239,14 +183,6 @@ export class YixiaoerClient {
       fileKey: result.data?.key || result.key,
     };
   }
-
-  setAccessToken(token: string): void {
-    this.accessToken = token;
-  }
-
-  getAccessToken(): string | null {
-    return this.accessToken;
-  }
 }
 
 let clientInstance: YixiaoerClient | null = null;
@@ -267,10 +203,7 @@ export function createClient(baseUrl?: string): YixiaoerClient {
 }
 
 export function clearClient(): void {
-  if (clientInstance) {
-    clientInstance.logout();
-    clientInstance = null;
-  }
+  clientInstance = null;
 }
 
 export function setApiKey(apiKey: string): void {
