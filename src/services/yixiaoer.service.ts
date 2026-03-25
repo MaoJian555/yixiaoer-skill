@@ -1,6 +1,7 @@
 import { getClient } from "../api/client.js";
 import * as accountModule from "../modules/account.js";
 import * as publishFlowModule from "../modules/publish-flow.js";
+import * as publishModule from "../modules/publish.js";
 import * as overviewModule from "../modules/overviews.js";
 import type { SkillResult } from "../../types.d.ts";
 
@@ -269,6 +270,13 @@ export class YixiaoerService {
   }
 
   /**
+   * 获取分组列表
+   */
+  public async listGroups(params: any): Promise<SkillResult> {
+    return accountModule.listGroups(params);
+  }
+
+  /**
    * 验证表单字段
    */
   public async validateForm(params: { platform: string; publishType: string; data: any }): Promise<SkillResult> {
@@ -293,7 +301,9 @@ export class YixiaoerService {
       "B站": ["tags", "category", "declaration", "type"],
       "百家号": ["tags", "declaration"],
       "知乎": ["category"],
-      "头条号": ["tags"]
+      "头条号": ["tags"],
+      "一点号": ["tags", "category"],
+      "网易号": ["tags", "category"]
     };
 
     const requiredFields = platformRules[platform] || [];
@@ -315,6 +325,136 @@ export class YixiaoerService {
         missingFields,
         providedFields: Object.keys(data).filter(k => data[k] !== undefined),
         requiredFields: ["title", "description", ...requiredFields]
+      }
+    };
+  }
+
+  /**
+   * 批量发布内容（一次请求传多个账号）
+   * 支持平台兼容性校验、自动过滤不支持的平台
+   */
+  public async batchPublish(params: any): Promise<SkillResult> {
+    const check = await this.preflightCheck();
+    if (check) return check;
+
+    const { accountForms, platforms, publishType, publishChannel, clientId, coverKey } = params;
+
+    if (!accountForms || accountForms.length === 0) {
+      return { success: false, message: "❌ 请提供 accountForms（账号表单列表）" };
+    }
+
+    if (!platforms || platforms.length === 0) {
+      return { success: false, message: "❌ 请指定至少一个目标平台" };
+    }
+
+    if (!publishType) {
+      return { success: false, message: "❌ 请指定 publishType（video/imageText/article）" };
+    }
+
+    // ==================== 平台兼容性校验 ====================
+    
+    // 定义各平台支持的内容类型
+    const platformCapabilities: Record<string, string[]> = {
+      // 视频平台
+      "抖音": ["video", "imageText", "article"],
+      "快手": ["video", "imageText"],
+      "快手-Open": ["video"],
+      "小红书": ["video", "imageText"],
+      "视频号": ["video", "imageText"],
+      "哔哩哔哩": ["video", "article"],
+      "B站": ["video", "article"],
+      "腾讯视频": ["video"],
+      "爱奇艺": ["video"],
+      "搜狐视频": ["video"],
+      "得物": ["video"],
+      "美拍": ["video"],
+      "皮皮虾": ["video"],
+      "AcFun": ["video", "article"],
+      "一点号": ["video", "imageText", "article"],
+      "大鱼号": ["video", "article"],
+      "DuoDuoShiPin": ["video"],
+      "多多视频": ["video"],
+      
+      // 文章平台
+      "微信公众号": ["article"],
+      "百家号": ["imageText", "article"],
+      "头条号": ["imageText", "article"],
+      "知乎": ["imageText", "article"],
+      "搜狐号": ["article"],
+      "简书": ["article"],
+      "CSDN": ["article"],
+      "网易号": ["imageText", "article"],
+      "新浪微博": ["imageText", "article"],
+      "雪球号": ["article"],
+      "易车号": ["article"],
+      "车家号": ["article"],
+      "豆瓣": ["article"],
+      "快传号": ["article"],
+    };
+
+    // 获取所有账号信息以便查询平台
+    const client = getClient();
+    const allAccounts = await client.getAccounts({ page: 1, size: 200, loginStatus: 1 });
+    const accountMap = new Map(allAccounts.data.map(a => [a.id, a]));
+
+    // 过滤支持该 publishType 的账号
+    const validForms: any[] = [];
+    const filteredForms: any[] = [];
+    const warnings: string[] = [];
+
+    for (const form of accountForms) {
+      const account = accountMap.get(form.platformAccountId);
+      if (!account) {
+        warnings.push(`⚠️ 账号 ${form.platformAccountId} 不存在`);
+        filteredForms.push({ ...form, reason: "账号不存在" });
+        continue;
+      }
+
+      const platformName = account.platformName;
+      const supportedTypes = platformCapabilities[platformName] || [];
+
+      if (supportedTypes.includes(publishType)) {
+        validForms.push(form);
+      } else {
+        warnings.push(`⚠️ 平台 ${platformName} 不支持 ${publishType === 'video' ? '视频' : publishType === 'imageText' ? '图文' : '文章'} 发布，已过滤`);
+        filteredForms.push({ ...form, reason: `不支持 ${publishType}` });
+      }
+    }
+
+    // 如果没有有效账号，返回错误
+    if (validForms.length === 0) {
+      return {
+        success: false,
+        message: `❌ 没有账号支持该内容类型 (${publishType})\n${warnings.join('\n')}`,
+        data: { filteredForms, warnings }
+      };
+    }
+
+    // 如果有被过滤的账号，返回警告
+    const warningMessage = filteredForms.length > 0 
+      ? `\n⚠️ 已过滤 ${filteredForms.length} 个不支持的账号:\n${filteredForms.map(f => `  - ${accountMap.get(f.platformAccountId)?.platformName || f.platformAccountId}: ${f.reason}`).join('\n')}`
+      : '';
+
+    // 调用发布模块
+    const result = await publishModule.batchPublishContent({
+      accountForms: validForms,
+      platforms: platforms.filter((p: string) => validForms.some(f => accountMap.get(f.platformAccountId)?.platformName === p)),
+      publishType,
+      publishChannel,
+      clientId,
+      coverKey
+    });
+
+    // 在结果中添加过滤信息
+    return {
+      ...result,
+      message: (result.message || '') + warningMessage,
+      data: {
+        ...(result.data || {}),
+        validCount: validForms.length,
+        filteredCount: filteredForms.length,
+        filteredForms,
+        warnings
       }
     };
   }

@@ -31,7 +31,7 @@ const result = await publishContent({
 
 #火影忍者 #鸣人 #佐助 #卡卡西 #动漫 #二次元 #青春回忆 #经典动漫`,
   imagePaths: [
-    'https://upload.wikimedia.org/wikipedia/en/9/94/NarutoCoverTankobon1.jpg'
+    'C:\\Users\\18390\\Pictures\\1.jpg'
   ],
   publishType: 'imageText',
   publishChannel: 'cloud',

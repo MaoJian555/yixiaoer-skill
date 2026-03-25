@@ -22,7 +22,7 @@ export class BilibiliAdapter implements PlatformAdapter {
 
     const request: CloudTaskPushRequest = {
       coverKey: content.coverKey || (content.images?.[0] || ""),
-      desc: content.desc || content.title,
+      description: content.description || content.title,
       platforms: ["哔哩哔哩"],
       publishType: content.publishType, 
       isDraft: content.isDraft ?? false,

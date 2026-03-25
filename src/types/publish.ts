@@ -23,7 +23,7 @@ export interface PublishContent {
   platformExtra?: Record<string, any>;
   
   // OA 规范中的其他字段
-  desc?: string;
+  description?: string;
   coverKey?: string;
   isDraft?: boolean;
 }
@@ -34,7 +34,7 @@ export interface PublishContent {
 export interface CloudTaskPushRequest {
   taskSetId?: string;
   coverKey: string;
-  desc?: string;
+  description?: string;
   clientId?: string;
   platforms: string[];
   publishType: "video" | "imageText" | "article";

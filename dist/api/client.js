@@ -76,6 +76,9 @@ export class YixiaoerClient {
     async getPublishPreset(platformAccountId) {
         return this.request("GET", `/v2/platform/accounts/${platformAccountId}/publish-preset`);
     }
+    async getGroups(params) {
+        return this.request("GET", "/groups", params || { page: 1, size: 10 });
+    }
     async publishTask(taskData) {
         return this.request("POST", "/taskSets/v2", taskData);
     }
@@ -100,7 +103,7 @@ export function getClient() {
 }
 export function createClient(baseUrl) {
     const config = {
-        baseUrl: baseUrl || "https://www-test.yixiaoer.cn/api",
+        baseUrl: baseUrl || "https://www.yixiaoer.cn/api",
     };
     clientInstance = new YixiaoerClient(config);
     return clientInstance;

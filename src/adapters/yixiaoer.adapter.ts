@@ -14,7 +14,7 @@ export class YiXiaoErAdapter implements PlatformAdapter {
     // 根据 OpenAPI 规范，准备 CloudTaskPushRequest
     const request: CloudTaskPushRequest = {
       coverKey: content.coverKey || (content.images?.[0] || ""),
-      desc: content.desc || content.title,
+      description: content.description || content.title,
       platforms: [account.platform],
       publishType: content.publishType || "imageText", 
       isDraft: content.isDraft ?? false,

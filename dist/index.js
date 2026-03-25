@@ -149,6 +149,26 @@ export default async function (api) {
             return service.getAccountOverviews(params);
         }
     });
+    /**
+     * 获取分组列表
+     */
+    api.registerTool({
+        name: "list-groups",
+        description: "获取分组列表。通过分组可以查出分组里面的账号信息。",
+        parameters: Type.Object({
+            name: Type.Optional(Type.String({ description: "分组名称筛选" })),
+            onlySelf: Type.Optional(Type.Boolean({ description: "仅查看自己创建的分组" })),
+            page: Type.Optional(Type.Number({ default: 1 })),
+            size: Type.Optional(Type.Number({ default: 10 })),
+            visibleScope: Type.Optional(Type.Union([
+                Type.Literal("all"),
+                Type.Literal("specific")
+            ], { description: "可见范围: all=所有用户可见, specific=指定用户可见" }))
+        }),
+        async execute(_id, params) {
+            return service.listGroups(params);
+        }
+    });
     // ==================== 数据查询工具 ====================
     /**
      * 获取作品数据
@@ -212,6 +232,58 @@ export default async function (api) {
         }),
         async execute(_id, params) {
             return service.validateForm(params);
+        }
+    });
+    /**
+     * 批量发布（一次请求多账号）
+     */
+    api.registerTool({
+        name: "batch-publish",
+        description: "批量发布内容到多个平台。一次请求可传多个 accountForms，支持视频、图文、文章类型。",
+        parameters: Type.Object({
+            accountForms: Type.Array(Type.Object({
+                platformAccountId: Type.String({ description: "平台账号ID" }),
+                publishContentId: Type.Optional(Type.String({ description: "发布内容ID" })),
+                coverKey: Type.Optional(Type.String({ description: "封面Key（OSS）" })),
+                cover: Type.Optional(Type.Object({
+                    key: Type.Optional(Type.String({ description: "封面Key" })),
+                    path: Type.Optional(Type.String({ description: "封面路径或URL" })),
+                    width: Type.Number({ description: "封面宽度" }),
+                    height: Type.Number({ description: "封面高度" }),
+                    size: Type.Number({ description: "封面大小" })
+                })),
+                video: Type.Optional(Type.Object({
+                    key: Type.Optional(Type.String({ description: "视频Key" })),
+                    path: Type.Optional(Type.String({ description: "视频路径或URL" })),
+                    duration: Type.Number({ description: "视频时长（秒）" }),
+                    width: Type.Number({ description: "视频宽度" }),
+                    height: Type.Number({ description: "视频高度" }),
+                    size: Type.Number({ description: "视频大小" })
+                })),
+                images: Type.Optional(Type.Array(Type.Object({
+                    key: Type.Optional(Type.String({ description: "图片Key" })),
+                    path: Type.Optional(Type.String({ description: "图片路径或URL" })),
+                    width: Type.Number({ description: "图片宽度" }),
+                    height: Type.Number({ description: "图片高度" }),
+                    size: Type.Number({ description: "图片大小" })
+                }))),
+                contentPublishForm: Type.Object({}, { additionalProperties: true, description: "平台发布表单数据" })
+            }), { description: "账号表单列表，可传多个账号" }),
+            platforms: Type.Array(Type.String(), { description: "目标平台列表，如 ['抖音', '小红书']" }),
+            publishType: Type.Union([
+                Type.Literal("video"),
+                Type.Literal("imageText"),
+                Type.Literal("article")
+            ], { description: "内容类型：video=视频, imageText=图文, article=文章" }),
+            publishChannel: Type.Optional(Type.Union([
+                Type.Literal("local"),
+                Type.Literal("cloud")
+            ], { description: "发布渠道：local=本机发布, cloud=云发布" })),
+            clientId: Type.Optional(Type.String({ description: "客户端ID（本机发布时必填）" })),
+            coverKey: Type.Optional(Type.String({ description: "素材coverKey" }))
+        }),
+        async execute(_id, params) {
+            return service.batchPublish(params);
         }
     });
     if (api.logger?.info) {

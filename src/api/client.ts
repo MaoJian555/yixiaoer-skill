@@ -4,6 +4,8 @@ import type {
   ApiResponse,
   MediaAccount,
   TeamInfo,
+  ListGroupsParams,
+  Group,
 } from "../../types.d.ts";
 
 let configuredApiKey: string | null = null;
@@ -157,6 +159,20 @@ export class YixiaoerClient {
     );
   }
 
+  async getGroups(params?: ListGroupsParams): Promise<{
+    data: Group[];
+    page: number;
+    size: number;
+    totalSize: number;
+    totalPage: number;
+  }> {
+    return this.request(
+      "GET",
+      "/groups",
+      params || { page: 1, size: 10 },
+    );
+  }
+
   async publishTask(taskData: any): Promise<any> {
     return this.request("POST", "/taskSets/v2", taskData);
   }
@@ -196,7 +212,7 @@ export function getClient(): YixiaoerClient {
 
 export function createClient(baseUrl?: string): YixiaoerClient {
   const config: YixiaoerConfig = {
-    baseUrl: baseUrl || "https://www-test.yixiaoer.cn/api",
+    baseUrl: baseUrl || "https://www.yixiaoer.cn/api",
   };
   clientInstance = new YixiaoerClient(config);
   return clientInstance;

@@ -83,8 +83,30 @@ export interface GetPublishRecordsParams {
 /** 内容类型 */
 export type ContentType = 'video' | 'article' | 'imageText';
 
-/** 可见性类型 */
-export type VisibleType = 0 | 1; // 0=公开, 1=私密
+/** 可见范围 all: 所有用户可见; specific: 指定用户可见 */
+export enum VisibleScope {
+  All = "all",
+  Specific = "specific",
+}
+
+/** 分组参数 */
+export interface ListGroupsParams {
+  name?: string;
+  onlySelf?: boolean;
+  page?: number;
+  size?: number;
+  visibleScope?: VisibleScope;
+}
+
+/** 分组信息 */
+export interface Group {
+  id: string;
+  name: string;
+  visibleScope?: VisibleScope;
+  accountCount?: number;
+  createTime?: number;
+  updateTime?: number;
+}
 
 /** 发布类型 */
 export type PubType = 0 | 1; // 0=草稿, 1=直接发布
@@ -574,7 +596,7 @@ export interface SouHuHaoArticleForm {
   covers: OldCover[];
   title: string;
   content: string;
-  desc: string;
+  description: string;
   scheduledTime?: number;
 }
 
@@ -622,7 +644,7 @@ export interface CSDNArticleForm {
   covers: OldCover[];
   title: string;
   content: string;
-  desc: string;
+  description: string;
   tags: string[];
   type: 1 | 2 | 4;
   contentSourceUrl?: string;
@@ -633,6 +655,44 @@ export interface CSDNArticleForm {
 // ============================================================================
 // 发布参数
 // ============================================================================
+
+export interface BatchPublishParams {
+  accountForms: AccountForm[];
+  platforms: string[];
+  publishType: "video" | "article" | "imageText";
+  publishChannel?: string;
+  clientId?: string;
+  coverKey?: string;
+}
+
+export interface AccountForm {
+  platformAccountId: string;
+  publishContentId?: string;
+  cover?: {
+    key?: string;
+    path?: string;
+    width: number;
+    height: number;
+    size: number;
+  };
+  video?: {
+    key?: string;
+    path?: string;
+    duration: number;
+    width: number;
+    height: number;
+    size: number;
+  };
+  images?: Array<{
+    key?: string;
+    path?: string;
+    width: number;
+    height: number;
+    size: number;
+  }>;
+  coverKey?: string;
+  contentPublishForm: Record<string, any>;
+}
 
 export interface PublishArgs {
   cover?: OldImage;

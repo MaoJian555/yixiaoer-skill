@@ -1,62 +1,20 @@
-import { setApiKey, getClient } from '../dist/api/client.js';
+import { setApiKey } from '../dist/api/client.js';
 import { buildContentPublishForm, PLATFORM_RULES } from '../dist/config/platform-rules.js';
 
 setApiKey('SwdbOYLjs1kwlh-4CZHZK');
 
-// 模拟上次小红书图文发布的参数
 const publishType = 'imageText';
-const platformCode = 'XiaoHongShu';
-const rule = PLATFORM_RULES[platformCode];
+const rule = PLATFORM_RULES['XiaoHongShu'];
 
 const baseForm = buildContentPublishForm(publishType, {
   title: '🍥火影忍者｜那些年我们追过的经典角色',
-  description: '分享一段精彩的视频内容，欢迎点赞关注！',
+  description: '🔥 火影忍者，一代人的青春记忆！\n\n✨ 【漩涡鸣人】从被全村嫌弃的孤儿，到守护木叶的第七代火影。',
 });
 
-const finalContentPublishForm = {
-  ...baseForm,
-};
+console.log('========== 修复后 contentPublishForm ==========');
+console.log(JSON.stringify(baseForm, null, 2));
 
-const accountForm = {
-  platformAccountId: '68d3cdebfc771bf62ab99f9d',
-  coverKey: undefined,
-  contentPublishForm: finalContentPublishForm,
-  images: [
-    {
-      path: 'https://upload.wikimedia.org/wikipedia/en/9/94/NarutoCoverTankobon1.jpg',
-      width: 1080,
-      height: 1920,
-      size: 0,
-    }
-  ],
-  cover: {
-    path: 'https://upload.wikimedia.org/wikipedia/en/9/94/NarutoCoverTankobon1.jpg',
-    width: 1080,
-    height: 1920,
-    size: 0,
-  }
-};
-
-const publishArgs = {
-  clientId: null,
-  platforms: [rule.name],
-  publishType,
-  publishChannel: 'cloud',
-  coverKey: '',
-  publishArgs: {
-    accountForms: [accountForm],
-    platformForms: {
-      [rule.name]: { formType: 'task' }
-    },
-    content: '🔥 火影忍者，一代人的青春记忆！...',
-  },
-};
-
-console.log('========== 实际传给 API 的完整参数 ==========');
-console.log(JSON.stringify(publishArgs, null, 2));
-console.log('\n========== contentPublishForm 详情 ==========');
-console.log(JSON.stringify(finalContentPublishForm, null, 2));
-console.log('\n========== 平台规则字段 ==========');
-console.log('平台:', rule.name);
-console.log('支持类型:', rule.supportedTypes);
-console.log('平台字段:', rule.platformFields);
+console.log('\n========== 修复验证 ==========');
+console.log('✅ description 字段:', baseForm.description ? '已填入' : '❌ 缺失');
+console.log('✅ covers 初始值:', JSON.stringify(baseForm.covers));
+console.log('\n说明：covers 会在图片上传后自动填入第一张图片 key');

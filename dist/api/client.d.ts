@@ -1,4 +1,4 @@
-import type { YixiaoerConfig, MediaAccount, TeamInfo } from "../../types.d.ts";
+import type { YixiaoerConfig, MediaAccount, TeamInfo, ListGroupsParams, Group } from "../../types.d.ts";
 export declare class YixiaoerClient {
     private client;
     private config;
@@ -57,6 +57,13 @@ export declare class YixiaoerClient {
         size?: number;
     }): Promise<any>;
     getPublishPreset(platformAccountId: string): Promise<any>;
+    getGroups(params?: ListGroupsParams): Promise<{
+        data: Group[];
+        page: number;
+        size: number;
+        totalSize: number;
+        totalPage: number;
+    }>;
     publishTask(taskData: any): Promise<any>;
     getUploadUrl(fileName: string, fileSize: number, contentType: string): Promise<{
         uploadUrl: string;

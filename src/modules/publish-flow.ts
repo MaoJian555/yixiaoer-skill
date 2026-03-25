@@ -9,7 +9,6 @@ interface PublishFlowParams {
   platformAccountId: string;
   title: string;
   description: string;
-  desc?: string;
   publishChannel?: string;
   clientId?: string;
   publishContentId?: string;

@@ -5,11 +5,11 @@ license: MIT
 metadata:
   author: yixiaoer
   homepage: https://www.yixiaoer.cn
-  repository: https://github.com/MaoJian555/yixiaoer-skill
+  repository: https://github.com/yixiaoer888/yixiaoer-skill.git
   version: 1.0.4
   tags:
     - yixiaoer
-    - openclaw-skill
+    - openclaw-skill  
     - publisher
     - social-media
     - multi-platform
@@ -75,6 +75,7 @@ metadata:
 |------|------|
 | `list-accounts` | 获取账号列表 |
 | `account-overviews` | 获取账号概览 |
+| `list-groups` | 获取分组列表 |
 
 ### 数据工具
 
@@ -185,4 +186,4 @@ MIT
 
 - [蚁小二官网](https://www.yixiaoer.cn)
 - [OpenClaw 文档](https://docs.openclaw.ai)
-- [问题反馈](https://github.com/MaoJian555/yixiaoer-skill/issues)
+- [问题反馈](https://github.com/yixiaoer888/yixiaoer-skill/issues) 

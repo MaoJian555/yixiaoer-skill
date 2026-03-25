@@ -39,7 +39,7 @@ export abstract class BaseHubAdapter implements PlatformAdapter {
 
     const request: CloudTaskPushRequest = {
       coverKey: content.coverKey || (content.images?.[0] || ""),
-      desc: content.desc || content.title,
+      description: content.description || content.title,
       platforms: [this.platformName],
       publishType: type,
       isDraft: content.isDraft ?? false,
@@ -211,7 +211,7 @@ export class WeChatPublicAdapter extends BaseHubAdapter {
         {
           title: content.title || "未命名文章",
           content: content.content || "",
-          digest: content.desc || content.title?.slice(0, 50) || "",
+          digest: content.description || content.title?.slice(0, 50) || "",
           cover: {
             pathOrUrl: content.images?.[0] || content.coverKey || "",
             width: 1000, 

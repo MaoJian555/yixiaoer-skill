@@ -1,10 +1,17 @@
 import type { GetPublishRecordsParams, SkillResult } from "../../types.d.ts";
 export declare function getPublishRecords(params: GetPublishRecordsParams): Promise<SkillResult>;
+export declare function batchPublishContent(params: {
+    accountForms: any[];
+    platforms: string[];
+    publishType: string;
+    publishChannel?: string;
+    clientId?: string;
+    proxyId?: string;
+    coverKey?: string;
+}): Promise<SkillResult>;
 export declare function publishContent(params: {
     /** 素材coverKey（上传后返回） */
     coverKey?: string;
-    /** 发布描述 */
-    desc?: string;
     /** 发布平台列表：抖音/小红书/知乎/B站/快手等 */
     platforms: string[];
     /** 内容类型：video-视频, article-文章, image-图文 */
@@ -48,8 +55,6 @@ export declare function publishContent(params: {
     publishChannel?: string;
     /** 客户端识别符，本机发布必填 */
     clientId?: string;
-    /** 代理节点ID */
-    proxyId?: string;
     /** 封面宽度 */
     coverWidth?: number;
     /** 竖版封面宽度 */

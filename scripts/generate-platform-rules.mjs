@@ -16,6 +16,7 @@ const __dirname = path.dirname(__filename);
 // ==================== 配置 ====================
 
 const SOURCE_DIR = 'C:\\work\\yixiaoer\\yixiaoer-universal\\apps\\server-api\\packages\\yxr-open-platform\\src\\models\\platform';
+const DOCS_DIR = 'C:\\work\\yixiaoer\\yixiaoer-skill\\docs\\platforms';
 const OUTPUT_FILE = path.join(__dirname, '../src/config/platform-rules.ts');
 
 // DTO 文件名 -> 平台 code + name + supportedTypes 映射
@@ -59,6 +60,66 @@ const PLATFORM_META = {
 };
 
 // ==================== 解析工具 ====================
+
+/**
+ * 从 md 文件解析必填字段
+ * 解析 docs/platforms/*.md 中的表格，提取必填字段
+ */
+function parseMdFiles() {
+  const mdFiles = fs.readdirSync(DOCS_DIR).filter(f => f.endsWith('.md') && f !== 'README.md');
+  
+  const platformRequiredFields = {};
+  
+  for (const file of mdFiles) {
+    const filePath = path.join(DOCS_DIR, file);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const platformCode = file.replace('.md', '');
+    
+    const requiredFields = new Set();
+    const optionalFields = new Set();
+    
+    const lines = content.split('\n');
+    let headerFound = false;
+    
+    for (const line of lines) {
+      if (line.includes('字段名') && line.includes('必填')) {
+        headerFound = true;
+        continue;
+      }
+      
+      if (headerFound && line.startsWith('|')) {
+        const cells = line.split('|').map(c => c.trim()).filter(c => c);
+        
+        if (cells.length >= 2) {
+          const fieldCell = cells[0];
+          const required = cells.length >= 3 ? cells[2] : '';
+          
+          const fieldNameMatch = fieldCell.match(/`([^`]+)`/);
+          const fieldName = fieldNameMatch ? fieldNameMatch[1] : fieldCell;
+          
+          if (fieldName && !fieldName.includes('---') && !fieldName.includes('字段名')) {
+            if (required.includes('✅')) {
+              requiredFields.add(fieldName);
+            } else if (required.includes('❌') || required === '' || required === '否') {
+              optionalFields.add(fieldName);
+            }
+          }
+        }
+      } else if (headerFound && !line.startsWith('|')) {
+        headerFound = false;
+      }
+    }
+    
+    if (requiredFields.size > 0 || optionalFields.size > 0) {
+      platformRequiredFields[platformCode] = {
+        required: Array.from(requiredFields),
+        optional: Array.from(optionalFields)
+      };
+    }
+  }
+  
+  return platformRequiredFields;
+}
 
 /**
  * 从 DTO 内容中提取所有 class 定义及其字段
@@ -206,6 +267,10 @@ const dtoFiles = fs.readdirSync(SOURCE_DIR)
 
 console.log(`📂 找到 ${dtoFiles.length} 个平台 DTO 文件\n`);
 
+console.log('📂 正在解析 md 文档中的必填字段...');
+const mdRequiredFields = parseMdFiles();
+console.log(`   解析完成: ${Object.keys(mdRequiredFields).length} 个平台\n`);
+
 const platformRules = {};
 const stats = { success: 0, skipped: 0, noFields: 0 };
 
@@ -222,7 +287,6 @@ for (const file of dtoFiles) {
   const filePath = path.join(SOURCE_DIR, file);
   const content = fs.readFileSync(filePath, 'utf-8');
   
-  // 解析 Form 类
   const classes = parseDtoFile(content);
   
   if (classes.length === 0) {
@@ -231,39 +295,69 @@ for (const file of dtoFiles) {
     continue;
   }
   
-  // 推断 supportedTypes
   const supportedTypes = inferSupportedTypes(classes);
-  
-  // 合并所有字段
   const platformFields = mergeFields(classes);
+  
+  const mdFields = mdRequiredFields[meta.code] || { required: [], optional: [] };
   
   platformRules[meta.code] = {
     code: meta.code,
     name: meta.name,
     supportedTypes,
     platformFields,
+    fields: mdFields
   };
   
   console.log(`✅ ${slug} -> ${meta.code} (${meta.name})`);
-  console.log(`   类型: [${supportedTypes.join(', ')}] | 字段数: ${platformFields.length}`);
+  console.log(`   类型: [${supportedTypes.join(', ')}] | 字段数: ${platformFields.length} | 必填: ${mdFields.required.length}`);
   stats.success++;
 }
 
 // 额外添加豆包（无 DTO 文件）
+const mdFieldsDouBao = mdRequiredFields['AI_DouBao'] || { required: [], optional: [] };
 platformRules['AI_DouBao'] = {
   code: 'AI_DouBao',
   name: '豆包',
   supportedTypes: ['article'],
-  platformFields: ['title', 'desc', 'content', 'tags', 'category', 'subCategory'],
+  platformFields: ['title', 'description', 'content', 'tags', 'category', 'subCategory'],
+  fields: mdFieldsDouBao
 };
 
 // 额外添加西瓜视频（无独立 DTO）
+const mdFieldsXiGua = mdRequiredFields['XiGuaShiPin'] || { required: [], optional: [] };
 platformRules['XiGuaShiPin'] = {
   code: 'XiGuaShiPin',
   name: '西瓜视频',
   supportedTypes: ['video'],
-  platformFields: ['title', 'desc', 'covers', 'video', 'tags', 'category', 'subCategory', 'prePubTime', 'statement', 'pubType'],
+  platformFields: ['title', 'description', 'covers', 'video', 'tags', 'category', 'subCategory', 'prePubTime', 'statement', 'pubType'],
+  fields: mdFieldsXiGua
 };
+
+// ==================== 特殊规则 ====================
+if (platformRules['CheJiaHao']) {
+  platformRules['CheJiaHao'].titleLength = { min: 6, max: 30 };
+  platformRules['CheJiaHao'].fields = platformRules['CheJiaHao'].fields || { required: [], optional: [] };
+}
+
+if (platformRules['WangYiHao']) {
+  platformRules['WangYiHao'].titleLength = { min: 5, max: 50 };
+  platformRules['WangYiHao'].fields = platformRules['WangYiHao'].fields || { required: [], optional: [] };
+}
+
+if (platformRules['YiCheHao']) {
+  platformRules['YiCheHao'].titleLength = { min: 5, max: 28 };
+  platformRules['YiCheHao'].fields = platformRules['YiCheHao'].fields || { required: [], optional: [] };
+  if (!platformRules['YiCheHao'].fields.required.includes('category')) {
+    platformRules['YiCheHao'].fields.required.push('category');
+  }
+}
+
+if (platformRules['BiLiBiLi']) {
+  platformRules['BiLiBiLi'].fields = platformRules['BiLiBiLi'].fields || { required: [], optional: [] };
+  if (!platformRules['BiLiBiLi'].fields.required.includes('category')) {
+    platformRules['BiLiBiLi'].fields.required.push('category');
+  }
+}
 
 // ==================== 生成 TS 文件 ====================
 
@@ -278,11 +372,34 @@ function generateTs(rules) {
   lines.push(` * 生成时间：${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`);
   lines.push(` */`);
   lines.push(``);
+  lines.push(`export interface FieldRule {`);
+  lines.push(`  required?: boolean;`);
+  lines.push(`  type?: 'string' | 'number' | 'array' | 'object';`);
+  lines.push(`  minLength?: number;`);
+  lines.push(`  maxLength?: number;`);
+  lines.push(`  min?: number;`);
+  lines.push(`  max?: number;`);
+  lines.push(`  pattern?: string;`);
+  lines.push(`  patternMessage?: string;`);
+  lines.push(`  items?: {`);
+  lines.push(`    type?: 'string' | 'number' | 'object';`);
+  lines.push(`    minLength?: number;`);
+  lines.push(`    maxLength?: number;`);
+  lines.push(`  };`);
+  lines.push(`  options?: string[];`);
+  lines.push(`  optionsMessage?: string;`);
+  lines.push(`}`);
+  lines.push(``);
   lines.push(`export interface PlatformRule {`);
   lines.push(`  code: string;`);
   lines.push(`  name: string;`);
   lines.push(`  supportedTypes: ('video' | 'imageText' | 'article')[];`);
   lines.push(`  platformFields: string[];`);
+  lines.push(`  titleLength?: {`);
+  lines.push(`    min: number;`);
+  lines.push(`    max: number;`);
+  lines.push(`  };`);
+  lines.push(`  fields?: Record<string, FieldRule>;`);
   lines.push(`}`);
   lines.push(``);
   lines.push(`export const PLATFORM_RULES: Record<string, PlatformRule> = {`);
@@ -290,7 +407,28 @@ function generateTs(rules) {
   for (const [key, rule] of Object.entries(rules)) {
     const types = rule.supportedTypes.map(t => `'${t}'`).join(', ');
     const fields = rule.platformFields.map(f => `'${f}'`).join(', ');
-    lines.push(`  ${key}: { code: '${rule.code}', name: '${rule.name}', supportedTypes: [${types}], platformFields: [${fields}] },`);
+    
+    let fieldsOutput = '';
+    if (rule.fields && (rule.fields.required.length > 0 || rule.fields.optional.length > 0)) {
+      const requiredArr = rule.fields.required.map(f => `'${f}'`).join(', ');
+      const optionalArr = rule.fields.optional.map(f => `'${f}'`).join(', ');
+      
+      const fieldRules = [];
+      if (rule.fields.required.length > 0) {
+        fieldRules.push(`required: [${requiredArr}]`);
+      }
+      if (rule.fields.optional.length > 0) {
+        fieldRules.push(`optional: [${optionalArr}]`);
+      }
+      fieldsOutput = `, fields: { ${fieldRules.join(', ')} }`;
+    }
+    
+    let titleLengthOutput = '';
+    if (rule.titleLength) {
+      titleLengthOutput = `, titleLength: { min: ${rule.titleLength.min}, max: ${rule.titleLength.max} }`;
+    }
+    
+    lines.push(`  ${key}: { code: '${rule.code}', name: '${rule.name}', supportedTypes: [${types}], platformFields: [${fields}]${fieldsOutput}${titleLengthOutput} },`);
   }
   
   lines.push(`};`);

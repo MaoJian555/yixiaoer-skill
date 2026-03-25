@@ -1,6 +1,7 @@
 import { getClient } from '../api/client.js';
 import type {
   ListAccountsParams,
+  ListGroupsParams,
   SkillResult
 } from '../../types.d.ts';
 
@@ -96,6 +97,61 @@ export async function getPublishPreset(params: { platformAccountId: string }): P
     return {
       success: false,
       message: `❌ 获取发布预设失败: ${(error as Error).message}`,
+    };
+  }
+}
+
+export async function listGroups(params: ListGroupsParams): Promise<SkillResult> {
+  try {
+    const client = getClient();
+
+    const response = await client.getGroups({
+      name: params.name,
+      onlySelf: params.onlySelf,
+      page: params.page || 1,
+      size: params.size || 10,
+      visibleScope: params.visibleScope
+    });
+
+    if (!response.data || response.data.length === 0) {
+      return {
+        success: true,
+        message: '暂无分组信息',
+        data: { list: [], total: 0 }
+      };
+    }
+
+    let message = `📂 共获取到 ${response.totalSize} 个分组:\n\n`;
+    for (const group of response.data) {
+      message += `• ${group.name}`;
+      if (group.accountCount !== undefined) {
+        message += ` (${group.accountCount} 个账号)`;
+      }
+      message += '\n';
+      if (group.visibleScope) {
+        message += `  可见范围: ${group.visibleScope === 'all' ? '所有用户' : '指定用户'}\n`;
+      }
+      message += `  ID: ${group.id}\n\n`;
+    }
+
+    return {
+      success: true,
+      message,
+      data: response
+    };
+  } catch (error) {
+    const errorMsg = (error as Error).message;
+    
+    if (errorMsg.includes('认证已失效') || errorMsg.includes('API Key')) {
+      return {
+        success: false,
+        message: `❌ ${errorMsg}，请检查配置的 API Key`
+      };
+    }
+    
+    return {
+      success: false,
+      message: `❌ 获取分组列表失败: ${errorMsg}`
     };
   }
 }

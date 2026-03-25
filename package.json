@@ -39,10 +39,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MaoJian555/yixiaoer-skill.git"
+    "url": "https://github.com/yixiaoer888/yixiaoer-skill"
   },
   "bugs": {
-    "url": "https://github.com/MaoJian555/yixiaoer-skill/issues"
+    "url": "https://github.com/yixiaoer888/yixiaoer-skill/issues"
   },
   "homepage": "https://www.yixiaoer.cn",
   "dependencies": {
