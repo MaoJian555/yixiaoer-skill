@@ -1,4 +1,4 @@
-import type { GetPublishRecordsParams, SkillResult } from "../types.js";
+import type { GetPublishRecordsParams, SkillResult } from "../../types.d.ts";
 export declare function getPublishRecords(params: GetPublishRecordsParams): Promise<SkillResult>;
 export declare function publishContent(params: {
     /** 素材coverKey（上传后返回） */
@@ -61,3 +61,4 @@ export declare function publishContent(params: {
     /** 平台特有表单数据 */
     contentPublishForm?: Record<string, any>;
 }): Promise<SkillResult>;
+//# sourceMappingURL=publish.d.ts.map

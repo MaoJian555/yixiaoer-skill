@@ -1,6 +1,8 @@
 import axios from "axios";
 let configuredApiKey = null;
 export class YixiaoerClient {
+    client;
+    config;
     constructor(config) {
         this.config = config;
         this.client = axios.create({
@@ -98,7 +100,7 @@ export function getClient() {
 }
 export function createClient(baseUrl) {
     const config = {
-        baseUrl: baseUrl || "https://www.yixiaoer.cn/api",
+        baseUrl: baseUrl || "https://www-test.yixiaoer.cn/api",
     };
     clientInstance = new YixiaoerClient(config);
     return clientInstance;
@@ -109,3 +111,4 @@ export function clearClient() {
 export function setApiKey(apiKey) {
     configuredApiKey = apiKey;
 }
+//# sourceMappingURL=client.js.map

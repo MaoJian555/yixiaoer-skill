@@ -1,3 +1,11 @@
+/**
+ * platform-rules.ts
+ * 
+ * ⚠️  此文件由脚本自动生成，请勿手动修改！
+ * 生成命令：node scripts/generate-platform-rules.mjs
+ * 生成时间：2026/3/25 14:52:51
+ */
+
 export interface PlatformRule {
   code: string;
   name: string;
@@ -6,42 +14,41 @@ export interface PlatformRule {
 }
 
 export const PLATFORM_RULES: Record<string, PlatformRule> = {
+  AcFun: { code: 'AcFun', name: 'AcFun', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'scheduledTime', 'covers', 'content', 'desc', 'contentSourceUrl'] },
+  AiQiYi: { code: 'AiQiYi', name: '爱奇艺', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'declaration', 'scheduledTime', 'content'] },
+  BaiJiaHao: { code: 'BaiJiaHao', name: '百家号', supportedTypes: ['video', 'article', 'imageText'], platformFields: ['title', 'tags', 'declaration', 'location', 'scheduledTime', 'collection', 'activity', 'content', 'covers', 'category', 'cover'] },
+  BiLiBiLi: { code: 'BiLiBiLi', name: '哔哩哔哩', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'declaration', 'scheduledTime', 'contentSourceUrl', 'collection', 'covers', 'content'] },
+  CheJiaHao: { code: 'CheJiaHao', name: '车家号', supportedTypes: ['video', 'article'], platformFields: ['title', 'scheduledTime', 'covers', 'verticalCovers', 'content'] },
+  CSDN: { code: 'CSDN', name: 'CSDN', supportedTypes: ['article'], platformFields: ['covers', 'title', 'content', 'desc', 'tags', 'contentSourceUrl', 'declaration', 'scheduledTime'] },
+  DaYuHao: { code: 'DaYuHao', name: '大鱼号', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'scheduledTime', 'covers', 'verticalCovers', 'content'] },
+  DeWu: { code: 'DeWu', name: '得物', supportedTypes: ['video'], platformFields: ['title', 'category', 'declaration'] },
+  DouBan: { code: 'DouBan', name: '豆瓣', supportedTypes: ['article'], platformFields: ['title', 'content', 'tags'] },
+  DouYin: { code: 'DouYin', name: '抖音', supportedTypes: ['video', 'imageText', 'article'], platformFields: ['title', 'horizontalCover', 'statement', 'location', 'scheduledTime', 'shoppingCart', 'groupShopping', 'collection', 'sub_collection', 'sync_apps', 'hot_event', 'challenge', 'allow_save', 'mini_app', 'music', 'cooperation_info', 'game', 'film', 'images', 'musice', 'content', 'covers', 'headImage', 'topics', 'visibleType'] },
+  DuoDuoShiPin: { code: 'DuoDuoShiPin', name: '多多视频', supportedTypes: ['video'], platformFields: ['scheduledTime', 'shopping_cart'] },
+  FengWang: { code: 'FengWang', name: '蜂网', supportedTypes: ['video'], platformFields: ['title', 'tags', 'category', 'scheduledTime'] },
+  JianShu: { code: 'JianShu', name: '简书', supportedTypes: ['article'], platformFields: ['title', 'content'] },
+  KuaiChuanHao: { code: 'KuaiChuanHao', name: '快传号', supportedTypes: ['article'], platformFields: ['covers', 'title', 'content', 'tags', 'scheduledTime'] },
+  KuaiShou: { code: 'KuaiShou', name: '快手', supportedTypes: ['video', 'imageText'], platformFields: ['title', 'declaration', 'location', 'visibleType', 'scheduledTime', 'shopping_cart', 'collection', 'mini_app', 'nearby_show', 'allow_same_frame', 'allow_download', 'images', 'music'] },
+  MeiPai: { code: 'MeiPai', name: '美拍', supportedTypes: ['video'], platformFields: ['title', 'category', 'scheduledTime'] },
+  MeiYou: { code: 'MeiYou', name: '美柚', supportedTypes: ['video'], platformFields: ['title', 'scheduledTime'] },
+  QiEHao: { code: 'QiEHao', name: '企鹅号', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'declaration', 'scheduledTime', 'covers', 'content'] },
+  ShiPinHao: { code: 'ShiPinHao', name: '视频号', supportedTypes: ['video', 'imageText'], platformFields: ['title', 'short_title', 'location', 'scheduledTime', 'shoppingCart', 'horizontalCover', 'collection', 'activity', 'createType', 'pubType', 'images', 'music'] },
+  SouHuHao: { code: 'SouHuHao', name: '搜狐号', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'declaration', 'scheduledTime', 'covers', 'content', 'desc'] },
+  SouHuShiPin: { code: 'SouHuShiPin', name: '搜狐视频', supportedTypes: ['video'], platformFields: ['title', 'tags', 'declaration'] },
+  TengXunShiPin: { code: 'TengXunShiPin', name: '腾讯视频', supportedTypes: ['video'], platformFields: ['title', 'tags', 'scheduledTime', 'declaration'] },
+  TengXunWeiShi: { code: 'TengXunWeiShi', name: '腾讯微视', supportedTypes: ['video'], platformFields: ['title', 'scheduledTime'] },
+  TouTiaoHao: { code: 'TouTiaoHao', name: '头条号', supportedTypes: ['video', 'article', 'imageText'], platformFields: ['title', 'tags', 'declaration', 'scheduledTime', 'covers', 'content', 'isFirst', 'location', 'advertisement', 'images', 'pubType'] },
+  WangYiHao: { code: 'WangYiHao', name: '网易号', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'declaration', 'scheduledTime', 'covers', 'content'] },
+  WiFiWanNengYaoShi: { code: 'WiFiWanNengYaoShi', name: 'wifi万能钥匙', supportedTypes: ['article'], platformFields: ['covers', 'title', 'content', 'category'] },
+  WeiXinGongZhongHao: { code: 'WeiXinGongZhongHao', name: '微信公众号', supportedTypes: ['article'], platformFields: ['scheduledTime', 'notifySubscribers', 'sex', 'country', 'province', 'city', 'contentList'] },
+  XiaoHongShu: { code: 'XiaoHongShu', name: '小红书', supportedTypes: ['video', 'imageText'], platformFields: ['title', 'declaration', 'location', 'scheduledTime', 'collection', 'group', 'bind_live_info', 'shopping_cart', 'visibleType', 'images', 'music'] },
+  XiaoHongShuShangJiaHao: { code: 'XiaoHongShuShangJiaHao', name: '小红书商家号', supportedTypes: ['video'], platformFields: ['title', 'location', 'scheduledTime', 'shoppingCart'] },
+  XinLangWeiBo: { code: 'XinLangWeiBo', name: '新浪微博', supportedTypes: ['video', 'imageText', 'article'], platformFields: ['title', 'location', 'scheduledTime', 'collection', 'images', 'covers', 'content'] },
+  XueQiuHao: { code: 'XueQiuHao', name: '雪球号', supportedTypes: ['article'], platformFields: ['covers', 'title', 'content', 'scheduledTime'] },
+  YiCheHao: { code: 'YiCheHao', name: '易车号', supportedTypes: ['video', 'article'], platformFields: ['title', 'scheduledTime', 'covers', 'content', 'verticalCovers', 'declaration', 'allowForward', 'allowAbstract'] },
+  YiDianHao: { code: 'YiDianHao', name: '一点号', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'declaration', 'scheduledTime', 'covers', 'content'] },
+  ZhiHu: { code: 'ZhiHu', name: '知乎', supportedTypes: ['video', 'article', 'imageText'], platformFields: ['title', 'topics', 'category', 'declaration', 'scheduledTime', 'covers', 'content', 'images'] },
   AI_DouBao: { code: 'AI_DouBao', name: '豆包', supportedTypes: ['article'], platformFields: ['title', 'desc', 'content', 'tags', 'category', 'subCategory'] },
-  DouYin: { code: 'DouYin', name: '抖音', supportedTypes: ['video', 'imageText', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'images', 'createType', 'category', 'subCategory', 'tags', 'location', 'music', 'shopping_cart', 'group_shopping', 'mini_app', 'challenge', 'hot_event', 'film', 'game', 'collection', 'sub_collection', 'cooperation_info', 'sync_apps', 'visibleType', 'allow_save', 'allow_download', 'allow_same_frame', 'nearby_show', 'prePubTime', 'statement', 'password', 'pubType', 'short_title', 'horizontalCover', 'pk_cover', 'bind_live_info', 'group', 'activity'] },
-  KuaiShou: { code: 'KuaiShou', name: '快手', supportedTypes: ['video', 'imageText'], platformFields: ['title', 'desc', 'covers', 'video', 'images', 'createType', 'category', 'subCategory', 'tags', 'location', 'music', 'shopping_cart', 'group_shopping', 'mini_app', 'visibleType', 'allow_save', 'allow_download', 'allow_same_frame', 'nearby_show', 'prePubTime', 'statement', 'pubType', 'short_title', 'horizontalCover'] },
-  ShiPinHao: { code: 'ShiPinHao', name: '视频号', supportedTypes: ['video', 'imageText'], platformFields: ['title', 'desc', 'covers', 'video', 'images', 'createType', 'category', 'subCategory', 'tags', 'location', 'music', 'shopping_cart', 'group_shopping', 'mini_app', 'visibleType', 'allow_save', 'allow_download', 'prePubTime', 'statement', 'pubType', 'short_title', 'horizontalCover', 'activity'] },
-  XiaoHongShu: { code: 'XiaoHongShu', name: '小红书', supportedTypes: ['video', 'imageText'], platformFields: ['title', 'desc', 'covers', 'images', 'video', 'createType', 'category', 'subCategory', 'tags', 'location', 'music', 'shopping_cart', 'visibleType', 'allow_save', 'prePubTime', 'statement', 'pubType', 'horizontalCover'] },
-  BiLiBiLi: { code: 'BiLiBiLi', name: '哔哩哔哩', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'tags', 'content', 'location', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType', 'isFirst', 'advertisement'] },
-  ZhiHu: { code: 'ZhiHu', name: '知乎', supportedTypes: ['video', 'imageText', 'article'], platformFields: ['title', 'desc', 'covers', 'images', 'video', 'category', 'subCategory', 'tags', 'topics', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType'] },
-  QiEHao: { code: 'QiEHao', name: '企鹅号', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'tags', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType'] },
-  YiDianHao: { code: 'YiDianHao', name: '一点号', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'tags', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType'] },
-  WangYiHao: { code: 'WangYiHao', name: '网易号', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'tags', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType'] },
-  AiQiYi: { code: 'AiQiYi', name: '爱奇艺', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'tags', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType'] },
-  TengXunWeiShi: { code: 'TengXunWeiShi', name: '腾讯微视', supportedTypes: ['video'], platformFields: ['desc', 'covers', 'video', 'visibleType', 'prePubTime', 'statement'] },
-  PiPiXia: { code: 'PiPiXia', name: '皮皮虾', supportedTypes: ['video'], platformFields: ['desc', 'covers', 'video', 'prePubTime', 'statement'] },
-  TengXunShiPin: { code: 'TengXunShiPin', name: '腾讯视频', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'tags', 'category', 'subCategory', 'prePubTime', 'statement', 'pubType'] },
-  DuoDuoShiPin: { code: 'DuoDuoShiPin', name: '多多视频', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'prePubTime', 'statement', 'pubType'] },
-  MeiPai: { code: 'MeiPai', name: '美拍', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'prePubTime', 'statement'] },
-  AcFun: { code: 'AcFun', name: 'AcFun', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'tags', 'content', 'visibleType', 'prePubTime', 'statement', 'pubType'] },
-  DeWu: { code: 'DeWu', name: '得物', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'visibleType', 'prePubTime', 'statement'] },
-  CheJiaHao: { code: 'CheJiaHao', name: '车家号', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'content', 'category', 'subCategory', 'visibleType', 'prePubTime', 'statement', 'pubType'] },
-  YiCheHao: { code: 'YiCheHao', name: '易车号', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'content', 'category', 'subCategory', 'visibleType', 'prePubTime', 'statement', 'pubType'] },
-  TouTiaoHao: { code: 'TouTiaoHao', name: '头条号', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'tags', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType', 'isFirst'] },
-  BaiJiaHao: { code: 'BaiJiaHao', name: '百家号', supportedTypes: ['video', 'imageText', 'article'], platformFields: ['title', 'desc', 'covers', 'images', 'video', 'category', 'subCategory', 'tags', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType', 'isFirst', 'advertisement'] },
-  SouHuHao: { code: 'SouHuHao', name: '搜狐号', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType'] },
-  DaYuHao: { code: 'DaYuHao', name: '大鱼号', supportedTypes: ['video', 'article'], platformFields: ['title', 'desc', 'covers', 'video', 'category', 'subCategory', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType'] },
-  SouHuShiPin: { code: 'SouHuShiPin', name: '搜狐视频', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'prePubTime', 'statement'] },
-  XiaoHongShuShangJiaHao: { code: 'XiaoHongShuShangJiaHao', name: '小红书商家号', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'createType', 'category', 'tags', 'location', 'visibleType', 'prePubTime', 'statement'] },
-  FengWang: { code: 'FengWang', name: '蜂网', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'prePubTime'] },
-  MeiYou: { code: 'MeiYou', name: '美柚', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'prePubTime'] },
-  KuaiChuanHao: { code: 'KuaiChuanHao', name: '快传号', supportedTypes: ['article'], platformFields: ['title', 'desc', 'covers', 'content', 'category', 'subCategory', 'location', 'visibleType', 'prePubTime', 'statement'] },
-  XueQiuHao: { code: 'XueQiuHao', name: '雪球号', supportedTypes: ['article'], platformFields: ['title', 'desc', 'covers', 'content', 'category', 'subCategory', 'location', 'visibleType', 'prePubTime', 'statement'] },
-  XinLangWeiBo: { code: 'XinLangWeiBo', name: '新浪微博', supportedTypes: ['video', 'imageText', 'article'], platformFields: ['title', 'desc', 'covers', 'images', 'video', 'category', 'subCategory', 'tags', 'content', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl', 'pubType'] },
-  DouBan: { code: 'DouBan', name: '豆瓣', supportedTypes: ['article'], platformFields: ['title', 'desc', 'covers', 'content', 'category', 'location', 'visibleType', 'prePubTime', 'statement'] },
-  CSDN: { code: 'CSDN', name: 'CSDN', supportedTypes: ['article'], platformFields: ['title', 'desc', 'covers', 'content', 'category', 'subCategory', 'tags', 'location', 'visibleType', 'prePubTime', 'statement', 'contentSourceUrl'] },
-  JianShu: { code: 'JianShu', name: '简书', supportedTypes: ['article'], platformFields: ['title', 'desc', 'covers', 'content', 'location', 'visibleType', 'prePubTime', 'statement'] },
-  WiFiWanNengYaoShi: { code: 'WiFiWanNengYaoShi', name: 'wifi万能钥匙', supportedTypes: ['article'], platformFields: ['title', 'desc', 'covers', 'content', 'category', 'location', 'visibleType', 'prePubTime', 'statement'] },
-  WeiXinGongZhongHao: { code: 'WeiXinGongZhongHao', name: '微信公众号', supportedTypes: ['article'], platformFields: ['title', 'desc', 'covers', 'content', 'contentList', 'headImage', 'category', 'subCategory', 'authorName', 'createType', 'contentSourceUrl', 'allowAbstract', 'allowForward', 'notifySubscribers', 'province', 'city', 'sex', 'location'] },
   XiGuaShiPin: { code: 'XiGuaShiPin', name: '西瓜视频', supportedTypes: ['video'], platformFields: ['title', 'desc', 'covers', 'video', 'tags', 'category', 'subCategory', 'prePubTime', 'statement', 'pubType'] },
 };
 
@@ -132,7 +139,6 @@ export function buildPlatformPublishForm(
 ): Record<string, any> {
   const rule = getPlatformRule(platformCode);
   if (!rule) return {};
-
   return buildContentPublishForm(publishType, params);
 }
 
@@ -144,10 +150,8 @@ export function validatePublishParams(
   if (!rule) {
     return { valid: false, errors: [`不支持的平台: ${platformCode}`] };
   }
-
   if (!rule.supportedTypes.includes(publishType)) {
     return { valid: false, errors: [`${rule.name}不支持${publishType}类型`] };
   }
-
   return { valid: true, errors: [] };
 }

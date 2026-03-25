@@ -1,2 +1,2 @@
-import type { SkillResult, OpenClawApi } from './types.js';
-export default function plugin(api?: OpenClawApi): ((action: string, params: any) => Promise<SkillResult>) | void;
+export default function (api: any): Promise<void>;
+//# sourceMappingURL=index.d.ts.map

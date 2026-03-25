@@ -1,4 +1,4 @@
-import type { SkillResult } from "../types.js";
+import type { SkillResult } from "../../types.d.ts";
 interface PublishFlowParams {
     platforms: string[];
     publishType: "video" | "article" | "imageText" | "image";
@@ -31,3 +31,4 @@ interface PublishFlowParams {
 }
 export declare function publishFlow(params: PublishFlowParams): Promise<SkillResult>;
 export {};
+//# sourceMappingURL=publish-flow.d.ts.map

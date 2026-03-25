@@ -1,0 +1,126 @@
+{
+  "id": "yixiaoer-skill",
+  "name": "蚁小二多平台发布",
+  "version": "1.0.4",
+  "description": "蚁小二自媒体多平台发布插件。集成40+主流平台内容一键发布、账号管理、数据监控。支持视频、图文、文章三种内容类型的批量同步发布。",
+  "main": "dist/index.js",
+  "entry": "dist/index.js",
+  "author": "yixiaoer",
+  "license": "MIT",
+  "homepage": "https://www.yixiaoer.cn",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MaoJian555/yixiaoer-skill.git"
+  },
+  "keywords": [
+    "yixiaoer",
+    "yixiaoer-skill",
+    "openclaw",
+    "openclaw-skill",
+    "自媒体",
+    "内容分发",
+    "多平台发布",
+    "抖音",
+    "小红书",
+    "视频号",
+    "B站",
+    "微博",
+    "快手",
+    "一键分发",
+    "批量发布"
+  ],
+  "categories": [
+    "Social Media",
+    "Content Distribution",
+    "Automation"
+  ],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["apiKey"],
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "description": "蚁小二 API Key（必填，从蚁小二后台获取）"
+      },
+      "platformAccounts": {
+        "type": "object",
+        "description": "平台账号映射（可选，用于自动匹配账号）",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "capabilities": {
+    "platforms": {
+      "video": 28,
+      "imageText": 9,
+      "article": 20,
+      "total": 40
+    },
+    "features": [
+      "multi-platform-publish",
+      "batch-publish",
+      "scheduled-publish",
+      "draft-save",
+      "account-management",
+      "content-monitoring",
+      "auto-account-discovery",
+      "form-validation",
+      "vip-check"
+    ]
+  },
+  "tools": [
+    {
+      "name": "multi-platform-publish",
+      "category": "publish",
+      "description": "一键发布到多个平台"
+    },
+    {
+      "name": "publish-video",
+      "category": "publish",
+      "description": "发布视频内容"
+    },
+    {
+      "name": "publish-image-text",
+      "category": "publish",
+      "description": "发布图文内容"
+    },
+    {
+      "name": "publish-article",
+      "category": "publish",
+      "description": "发布文章内容"
+    },
+    {
+      "name": "list-accounts",
+      "category": "account",
+      "description": "获取账号列表"
+    },
+    {
+      "name": "account-overviews",
+      "category": "account",
+      "description": "获取账号概览"
+    },
+    {
+      "name": "content-overviews",
+      "category": "data",
+      "description": "获取作品数据"
+    },
+    {
+      "name": "upload-url",
+      "category": "helper",
+      "description": "获取上传地址"
+    },
+    {
+      "name": "get-publish-preset",
+      "category": "helper",
+      "description": "获取发布预设"
+    },
+    {
+      "name": "validate-form",
+      "category": "helper",
+      "description": "验证表单字段"
+    }
+  ]
+}

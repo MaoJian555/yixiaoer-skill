@@ -1,10 +1,9 @@
 import { getClient } from "../api/client.js";
-import type { GetPublishRecordsParams, SkillResult } from "../types.js";
+import type { GetPublishRecordsParams, SkillResult } from "../../types.d.ts";
 import {
   PLATFORM_RULES,
   validatePublishParams,
   buildContentPublishForm,
-  buildPlatformPublishForm,
 } from "../config/platform-rules.js";
 import * as fs from "fs";
 import * as path from "path";
@@ -16,148 +15,11 @@ import ffmpegStatic from "ffmpeg-static";
 let ffmpegPath: string | undefined;
 
 if (ffmpegStatic) {
-  ffmpeg.setFfmpegPath(ffmpegStatic);
-  ffmpegPath = ffmpegStatic;
+  ffmpeg.setFfmpegPath((ffmpegStatic as unknown) as string);
+  ffmpegPath = (ffmpegStatic as unknown) as string;
 } else {
   console.warn("⚠️ ffmpeg-static 未安装，视频封面提取功能将不可用");
   console.warn("💡 请运行: npm install ffmpeg-static");
-}
-
-/**
- * 根据关键词搜索并下载图片作为封面
- * @param keyword 搜索关键词
- * @param saveDir 保存目录
- * @returns 下载后的图片路径和大小
- */
-async function searchAndDownloadCover(
-  keyword: string,
-  saveDir: string
-): Promise<{ coverPath: string; coverSize: number; width: number; height: number }> {
-  console.log(`🔍 正在搜索封面图片: ${keyword}`);
-  
-  // 确保目录存在
-  if (!fs.existsSync(saveDir)) {
-    fs.mkdirSync(saveDir, { recursive: true });
-  }
-
-  // 方法1: 使用 Unsplash Source (已失效，改用其他方式)
-  // 方法2: 使用 Picsum 随机高质量图片
-  const randomImageUrl = `https://picsum.photos/seed/${encodeURIComponent(keyword)}/1080/1920`;
-  
-  try {
-    console.log(`🖼️ 尝试获取图片: ${randomImageUrl}`);
-    
-    const response = await axios.get(randomImageUrl, {
-      responseType: 'arraybuffer',
-      timeout: 30000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      maxRedirects: 5
-    });
-
-    const fileName = `cover_${Date.now()}.jpg`;
-    const savePath = path.join(saveDir, fileName);
-
-    fs.writeFileSync(savePath, Buffer.from(response.data));
-    const stats = fs.statSync(savePath);
-    
-    console.log(`✅ 封面图片获取成功: ${savePath} (${stats.size} bytes)`);
-    
-    return {
-      coverPath: savePath,
-      coverSize: stats.size,
-      width: 1080,
-      height: 1920
-    };
-  } catch (error) {
-    console.log(`❌ Picsum获取失败，尝试备用方案...`);
-    
-    // 备用: 使用固定的通用图片
-    const fallbackUrl = 'https://picsum.photos/1080/1920';
-    
-    try {
-      const response = await axios.get(fallbackUrl, {
-        responseType: 'arraybuffer',
-        timeout: 30000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        },
-        maxRedirects: 5
-      });
-
-      const fileName = `cover_${Date.now()}.jpg`;
-      const savePath = path.join(saveDir, fileName);
-
-      fs.writeFileSync(savePath, Buffer.from(response.data));
-      const stats = fs.statSync(savePath);
-      
-      console.log(`✅ 封面图片(备用)获取成功: ${savePath} (${stats.size} bytes)`);
-      
-      return {
-        coverPath: savePath,
-        coverSize: stats.size,
-        width: 1080,
-        height: 1920
-      };
-    } catch (fallbackError) {
-      console.log(`❌ 备用方案也失败: ${(fallbackError as Error).message}`);
-      throw fallbackError;
-    }
-  }
-}
-
-/**
- * 从视频中提取封面图片
- * @param videoPath 视频文件路径
- * @param width 封面宽度
- * @param height 封面高度
- * @returns 封面图片路径和大小
- */
-async function extractVideoCover(
-  videoPath: string,
-  width: number = 1080,
-  height: number = 1920
-): Promise<{ coverPath: string; coverSize: number }> {
-  if (!ffmpegPath) {
-    throw new Error(
-      "❌ ffmpeg-static 未安装，无法提取视频封面\n" +
-      "💡 请运行: npm install ffmpeg-static\n" +
-      "📖 或者在发布时直接传入 coverPath 参数指定封面图片"
-    );
-  }
-
-  return new Promise((resolve, reject) => {
-    // 安全处理路径 - 使用字符串操作代替 path 方法
-    const lastSlash = Math.max(videoPath.lastIndexOf('/'), videoPath.lastIndexOf('\\'));
-    const videoDir = lastSlash > 0 ? videoPath.substring(0, lastSlash) : '.';
-    const fileName = lastSlash > 0 ? videoPath.substring(lastSlash + 1) : videoPath;
-    const lastDot = fileName.lastIndexOf('.');
-    const videoName = lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
-    const coverPath = path.join(videoDir, `${videoName}_cover.jpg`);
-
-    console.log(`🎬 正在从视频提取封面: ${videoPath}`);
-
-    ffmpeg(videoPath)
-      .on("end", () => {
-        console.log(`✅ 封面提取完成: ${coverPath}`);
-        const stats = fs.statSync(coverPath);
-        resolve({
-          coverPath,
-          coverSize: stats.size,
-        });
-      })
-      .on("error", (err: Error) => {
-        console.error(`❌ 封面提取失败: ${err.message}`);
-        reject(err);
-      })
-      .screenshots({
-        timestamps: ["00:00:01"], // 第1秒
-        folder: videoDir,
-        filename: `${videoName}_cover.jpg`,
-        size: `${width}x${height}`,
-      });
-  });
 }
 
 async function downloadRemoteCover(
@@ -248,7 +110,7 @@ interface PublishArgs {
   platforms: string[];
   publishType: "video" | "article" | "imageText";
   publishChannel?: string;
-  coverKey?: string;
+  coverKey: string;
   proxyId?: string;
   publishArgs: {
     accountForms: AccountForm[];
@@ -284,7 +146,6 @@ interface AccountForm {
   }>;
   coverKey?: string;
   contentPublishForm: Record<string, any>;
-  mediaId?: string;
 }
 
 function normalizePlatform(input: string): string | null {
@@ -579,7 +440,6 @@ export async function publishContent(params: {
       publishContentId: params.publishContentId,
       coverKey: params.coverKey,
       contentPublishForm: finalContentPublishForm,
-      mediaId: "",
     };
 
     // 视频：远端 http 用 path，本地上传用 key

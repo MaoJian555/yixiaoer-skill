@@ -1,129 +1,238 @@
-import * as account from './modules/account.js';
-import * as publish from './modules/publish.js';
-import * as publishFlow from './modules/publish-flow.js';
-import * as overviews from './modules/overviews.js';
-import { getClient, setApiKey, createClient } from './api/client.js';
-import type { SkillResult, UploadUrlParams, OpenClawApi } from './types.js';
+import { Type } from "@sinclair/typebox";
+import { YixiaoerService } from "./services/yixiaoer.service.js";
 
-let openclawApi: OpenClawApi | null = null;
+/**
+ * 蚁小二多平台发布 Skill - OpenClaw 插件入口
+ * 
+ * 功能特性：
+ * - 支持 40+ 平台内容发布
+ * - 视频发布、图文发布、文章发布
+ * - 账号管理与数据监控
+ * - 自动账号发现与匹配
+ * - VIP 权限预检
+ */
 
-function initApiKey(): void {
-  if (openclawApi?.config?.apiKey) {
-    setApiKey(openclawApi.config.apiKey);
-    console.log('✅ 已加载配置的 API Key');
-  }
-}
+const service = YixiaoerService.getInstance();
 
-function ensureClient(): void {
-  if (openclawApi?.config?.apiKey) {
-    setApiKey(openclawApi.config.apiKey);
-  }
-  getClient();
-}
-
-export default function plugin(api?: OpenClawApi): ((action: string, params: any) => Promise<SkillResult>) | void {
-  if (api) {
-    openclawApi = api;
-    initApiKey();
-    ensureClient();
-    
-    if (api.logger?.info) {
-      api.logger.info('yixiaoer-skill 插件已加载');
-    }
+export default async function (api: any): Promise<void> {
+  // 设置全局 API Key
+  if (api?.config?.apiKey) {
+    const { setApiKey } = await import("./api/client.js");
+    setApiKey(api.config.apiKey);
   }
 
-  return run;
-}
+  // ==================== 核心发布工具 ====================
 
-async function run(action: string, params: any): Promise<SkillResult> {
-  try {
-    switch (action) {
-      case 'list-accounts':
-        return await account.listAccounts(params);
-
-      case 'get-publish-preset':
-        return await account.getPublishPreset(params);
-
-      case 'account-overviews':
-        return await overviews.getAccountOverviewsV2(params);
-
-      case 'content-overviews':
-        return await overviews.getContentOverviews(params);
-
-      case 'publish-video':
-        return await publishFlow.publishFlow({ ...params, publishType: 'video' });
-
-      case 'publish-image-text':
-        return await publishFlow.publishFlow({ ...params, publishType: 'imageText' });
-
-      case 'publish-article':
-        return await publishFlow.publishFlow({ ...params, publishType: 'article' });
-
-      case 'get-publish-records':
-        return await publish.getPublishRecords(params);
-
-      case 'upload-url':
-        return await getUploadUrl(params);
-        
-      case 'get-extended-api-docs':
-        return {
-          success: true,
-          message: `你可以通过以下链接获取蚁小二 4.0 的完整 LLMS 文档以识别更多 API（如用户管理、设备日志、任务集详情等）：\nhttps://s.apifox.cn/e66df935-0c39-44d0-8096-abd39417fa6a/llms.txt`,
-          data: { url: "https://s.apifox.cn/e66df935-0c39-44d0-8096-abd39417fa6a/llms.txt" }
-        };
-
-      default:
-        return {
-          success: false,
-          message: `❌ 不支持的操作: ${action}\n\n支持的操作:\n- list-accounts: 获取账号列表\n- account-overviews: 账号概览-新版\n- content-overviews: 作品数据列表\n- publish-video: 发布视频\n- publish-image-text: 发布图文\n- publish-article: 发布文章\n- get-publish-records: 获取发布记录\n- upload-url: 获取上传URL`
-        };
+  /**
+   * 多平台统一发布（核心能力）
+   */
+  api.registerTool({
+    name: "multi-platform-publish",
+    description: "【核心能力】一键发布内容到多个平台。支持视频、图文、文章三种类型，批量执行并返回各平台独立状态。",
+    parameters: Type.Object({
+      title: Type.String({ description: "标题（必填，最大50字）" }),
+      description: Type.String({ description: "描述/正文内容（必填，最大2000字）" }),
+      publishType: Type.Union([
+        Type.Literal("video"),
+        Type.Literal("imageText"),
+        Type.Literal("article")
+      ], { description: "内容类型：video=视频, imageText=图文, article=文章" }),
+      platforms: Type.Array(Type.String(), { 
+        description: "目标平台列表，如 ['抖音', '小红书', 'B站']" 
+      }),
+      videoPath: Type.Optional(Type.String({ description: "视频URL或本地路径（视频类型必填）" })),
+      imagePaths: Type.Optional(Type.Array(Type.String(), { description: "图片URL列表（图文类型必填）" })),
+      coverPath: Type.Optional(Type.String({ description: "封面图片URL或路径" })),
+      isDraft: Type.Optional(Type.Boolean({ default: false, description: "是否保存为草稿" })),
+      scheduledTime: Type.Optional(Type.Number({ description: "定时发布时间戳（毫秒）" })),
+      platformExtra: Type.Optional(Type.Object({}, { 
+        additionalProperties: true, 
+        description: "平台特定字段，如声明类型、分类、标签等" 
+      }))
+    }),
+    async execute(_id: string, params: any) {
+      return service.publishMultiPlatform(params);
     }
-  } catch (error) {
-    return {
-      success: false,
-      message: `❌ 执行失败: ${(error as Error).message}`,
-      data: null
-    };
-  }
-}
+  });
 
-async function getUploadUrl(params: UploadUrlParams): Promise<SkillResult> {
-  try {
-    const client = getClient();
-
-    if (!params.fileName) {
-      return {
-        success: false,
-        message: "❌ 参数错误: 请提供 fileName (文件名)"
-      };
+  /**
+   * 发布视频
+   */
+  api.registerTool({
+    name: "publish-video",
+    description: "发布视频到指定平台。支持抖音、快手、小红书、视频号、B站等28+平台。",
+    parameters: Type.Object({
+      platform: Type.String({ description: "目标平台名称，如 '抖音'、'小红书'" }),
+      accountName: Type.Optional(Type.String({ description: "账号名称关键字（用于匹配多账号）" })),
+      title: Type.String({ description: "视频标题" }),
+      description: Type.String({ description: "视频描述" }),
+      videoPath: Type.String({ description: "视频URL或本地路径" }),
+      coverPath: Type.Optional(Type.String({ description: "封面图片URL或路径" })),
+      isDraft: Type.Optional(Type.Boolean({ default: false })),
+      scheduledTime: Type.Optional(Type.Number()),
+      declaration: Type.Optional(Type.Number({ description: "创作声明类型" })),
+      category: Type.Optional(Type.Any({ description: "分类信息" })),
+      tags: Type.Optional(Type.Array(Type.String(), { description: "标签列表" }))
+    }),
+    async execute(_id: string, params: any) {
+      return service.publishVideo(params);
     }
+  });
 
-    if (!params.fileSize) {
-      return {
-        success: false,
-        message: "❌ 参数错误: 请提供 fileSize (文件大小)"
-      };
+  /**
+   * 发布图文
+   */
+  api.registerTool({
+    name: "publish-image-text",
+    description: "发布图文内容到指定平台。支持抖音、快手、小红书、视频号、微博等9个平台。",
+    parameters: Type.Object({
+      platform: Type.String({ description: "目标平台名称" }),
+      accountName: Type.Optional(Type.String({ description: "账号名称关键字" })),
+      title: Type.String({ description: "标题" }),
+      description: Type.String({ description: "正文内容" }),
+      imagePaths: Type.Array(Type.String(), { description: "图片URL列表" }),
+      isDraft: Type.Optional(Type.Boolean({ default: false })),
+      scheduledTime: Type.Optional(Type.Number()),
+      location: Type.Optional(Type.Any({ description: "位置信息" })),
+      music: Type.Optional(Type.Any({ description: "音乐信息" }))
+    }),
+    async execute(_id: string, params: any) {
+      return service.publishImageText(params);
     }
+  });
 
-    if (!params.contentType) {
-      return {
-        success: false,
-        message: "❌ 参数错误: 请提供 contentType (文件类型，如 video/mp4)"
-      };
+  /**
+   * 发布文章
+   */
+  api.registerTool({
+    name: "publish-article",
+    description: "发布文章到指定平台。支持微信公众号、百家号、头条号、知乎、微博等20+平台。",
+    parameters: Type.Object({
+      platform: Type.String({ description: "目标平台名称" }),
+      accountName: Type.Optional(Type.String({ description: "账号名称关键字" })),
+      title: Type.String({ description: "文章标题" }),
+      description: Type.String({ description: "文章正文（HTML或纯文本）" }),
+      coverPath: Type.Optional(Type.String({ description: "封面图片" })),
+      isDraft: Type.Optional(Type.Boolean({ default: false })),
+      scheduledTime: Type.Optional(Type.Number()),
+      category: Type.Optional(Type.Any({ description: "分类" })),
+      tags: Type.Optional(Type.Array(Type.String())),
+      isOriginal: Type.Optional(Type.Boolean({ description: "是否原创" }))
+    }),
+    async execute(_id: string, params: any) {
+      return service.publishArticle(params);
     }
+  });
 
-    const result = await client.getUploadUrl(params.fileName, params.fileSize, params.contentType);
+  // ==================== 账号管理工具 ====================
 
-    return {
-      success: true,
-      message: `✅ 获取上传URL成功\n\n上传URL: ${result.uploadUrl}\n文件Key: ${result.fileKey}`,
-      data: result
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `❌ 获取上传URL失败: ${(error as Error).message}`,
-      data: null
-    };
+  /**
+   * 获取账号列表
+   */
+  api.registerTool({
+    name: "list-accounts",
+    description: "获取蚁小二已绑定的账号列表。返回所有登录状态正常的账号信息。",
+    parameters: Type.Object({
+      platform: Type.Optional(Type.String({ description: "平台名称筛选" })),
+      loginStatus: Type.Optional(Type.Number({ default: 1, description: "登录状态：1=正常" })),
+      page: Type.Optional(Type.Number({ default: 1 })),
+      size: Type.Optional(Type.Number({ default: 50 }))
+    }),
+    async execute(_id: string, params: any) {
+      return service.listAccounts(params);
+    }
+  });
+
+  /**
+   * 获取账号概览
+   */
+  api.registerTool({
+    name: "account-overviews",
+    description: "获取账号数据概览，包括粉丝数、作品数等统计信息。",
+    parameters: Type.Object({
+      platform: Type.String({ description: "平台名称（必填）" }),
+      page: Type.Optional(Type.Number({ default: 1 })),
+      size: Type.Optional(Type.Number({ default: 20 })),
+      name: Type.Optional(Type.String({ description: "账号名称筛选" })),
+      group: Type.Optional(Type.String({ description: "分组筛选" }))
+    }),
+    async execute(_id: string, params: any) {
+      return service.getAccountOverviews(params);
+    }
+  });
+
+  // ==================== 数据查询工具 ====================
+
+  /**
+   * 获取作品数据
+   */
+  api.registerTool({
+    name: "content-overviews",
+    description: "查询已发布作品的数据列表，支持多维度筛选。",
+    parameters: Type.Object({
+      platformAccountId: Type.Optional(Type.String({ description: "平台账号ID" })),
+      platform: Type.Optional(Type.String({ description: "平台名称" })),
+      type: Type.Optional(Type.String({ description: "内容类型：all/video/miniVideo/dynamic/article" })),
+      title: Type.Optional(Type.String({ description: "标题关键字" })),
+      publishStartTime: Type.Optional(Type.Number({ description: "发布开始时间戳" })),
+      publishEndTime: Type.Optional(Type.Number({ description: "发布结束时间戳" })),
+      page: Type.Optional(Type.Number({ default: 1 })),
+      size: Type.Optional(Type.Number({ default: 20 }))
+    }),
+    async execute(_id: string, params: any) {
+      return service.getContentOverviews(params);
+    }
+  });
+
+  // ==================== 辅助工具 ====================
+
+  /**
+   * 获取上传地址
+   */
+  api.registerTool({
+    name: "upload-url",
+    description: "获取素材上传地址。本地文件需先调用此接口获取上传Key后再发布。",
+    parameters: Type.Object({
+      fileName: Type.String({ description: "文件名" }),
+      fileSize: Type.Number({ description: "文件大小（字节）" }),
+      contentType: Type.Optional(Type.String({ description: "内容类型" }))
+    }),
+    async execute(_id: string, params: any) {
+      return service.getUploadUrl(params);
+    }
+  });
+
+  /**
+   * 获取发布预设
+   */
+  api.registerTool({
+    name: "get-publish-preset",
+    description: "获取平台发布预设数据，包括分类、话题、标签等选项。",
+    parameters: Type.Object({
+      platformAccountId: Type.String({ description: "平台账号ID" })
+    }),
+    async execute(_id: string, params: any) {
+      return service.getPublishPreset(params);
+    }
+  });
+
+  /**
+   * 验证表单字段
+   */
+  api.registerTool({
+    name: "validate-form",
+    description: "验证发布表单是否符合平台要求，返回缺失字段和错误信息。",
+    parameters: Type.Object({
+      platform: Type.String({ description: "平台名称" }),
+      publishType: Type.String({ description: "内容类型" }),
+      data: Type.Object({}, { additionalProperties: true, description: "表单数据" })
+    }),
+    async execute(_id: string, params: any) {
+      return service.validateForm(params);
+    }
+  });
+
+  if (api.logger?.info) {
+    api.logger.info("✅ 蚁小二多平台发布 Skill 已就绪");
   }
 }

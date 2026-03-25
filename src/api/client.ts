@@ -4,7 +4,7 @@ import type {
   ApiResponse,
   MediaAccount,
   TeamInfo,
-} from "../types.js";
+} from "../../types.d.ts";
 
 let configuredApiKey: string | null = null;
 
@@ -196,7 +196,7 @@ export function getClient(): YixiaoerClient {
 
 export function createClient(baseUrl?: string): YixiaoerClient {
   const config: YixiaoerConfig = {
-    baseUrl: baseUrl || "https://www.yixiaoer.cn/api",
+    baseUrl: baseUrl || "https://www-test.yixiaoer.cn/api",
   };
   clientInstance = new YixiaoerClient(config);
   return clientInstance;

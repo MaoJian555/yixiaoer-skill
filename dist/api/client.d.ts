@@ -1,4 +1,4 @@
-import type { YixiaoerConfig, MediaAccount, TeamInfo } from "../types.js";
+import type { YixiaoerConfig, MediaAccount, TeamInfo } from "../../types.d.ts";
 export declare class YixiaoerClient {
     private client;
     private config;
@@ -67,3 +67,4 @@ export declare function getClient(): YixiaoerClient;
 export declare function createClient(baseUrl?: string): YixiaoerClient;
 export declare function clearClient(): void;
 export declare function setApiKey(apiKey: string): void;
+//# sourceMappingURL=client.d.ts.map

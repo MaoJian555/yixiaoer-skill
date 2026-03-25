@@ -22,6 +22,9 @@ npm run build
 
 ## 支持的动作
 
+> **核心能力**：本插件提供多平台内容发布核心能力，包括视频发布、图文发布、文章发布等。
+> **非核心能力**：其他接口（如团队管理、用户管理、素材库管理、媒体账号管理等）可通过 [llms.txt](./llms.txt) 识别。
+
 - `list-accounts` 获取账号列表（loginStatus=1）
 - `account-overviews` 账号概览（新版）
 - `content-overviews` 作品数据列表

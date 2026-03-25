@@ -1,3 +1,10 @@
+/**
+ * platform-rules.ts
+ *
+ * ⚠️  此文件由脚本自动生成，请勿手动修改！
+ * 生成命令：node scripts/generate-platform-rules.mjs
+ * 生成时间：2026/3/25 14:52:51
+ */
 export interface PlatformRule {
     code: string;
     name: string;
@@ -42,3 +49,4 @@ export declare function validatePublishParams(platformCode: string, publishType:
     valid: boolean;
     errors: string[];
 };
+//# sourceMappingURL=platform-rules.d.ts.map

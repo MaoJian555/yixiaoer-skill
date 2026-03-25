@@ -1,5 +1,5 @@
 import { getClient } from "../api/client.js";
-import type { AccountOverviewsParams, ContentOverviewsParams, SkillResult } from "../types.js";
+import type { AccountOverviewsParams, ContentOverviewsParams, SkillResult } from "../../types.d.ts";
 
 function handleError(error: Error): SkillResult {
   const errorMsg = error.message;

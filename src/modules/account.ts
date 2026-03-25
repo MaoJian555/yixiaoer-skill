@@ -2,7 +2,7 @@ import { getClient } from '../api/client.js';
 import type {
   ListAccountsParams,
   SkillResult
-} from '../types.js';
+} from '../../types.d.ts';
 
 export async function listAccounts(params: ListAccountsParams): Promise<SkillResult> {
   try {

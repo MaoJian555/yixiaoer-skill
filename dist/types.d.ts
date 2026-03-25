@@ -11,6 +11,14 @@ export interface OpenClawApi {
         warn?: (msg: string) => void;
         error?: (msg: string) => void;
     };
+    registerTool: (tool: {
+        name: string;
+        description: string;
+        parameters: any;
+        execute: (_id: string, params: any) => Promise<any>;
+    }, options?: {
+        optional: boolean;
+    }) => void;
 }
 export interface LoginResponse {
     token: string;
@@ -138,3 +146,4 @@ export interface CloudTaskPushRequest {
     publishArgs: CloudPublishArgs;
     publishChannel: "local" | "cloud";
 }
+//# sourceMappingURL=types.d.ts.map
