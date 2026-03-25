@@ -30,6 +30,7 @@ export const PLATFORM_RULES: Record<string, PlatformRule> = {
   KuaiChuanHao: { code: 'KuaiChuanHao', name: '快传号', supportedTypes: ['article'], platformFields: ['covers', 'title', 'content', 'tags', 'scheduledTime'] },
   KuaiShou: { code: 'KuaiShou', name: '快手', supportedTypes: ['video', 'imageText'], platformFields: ['title', 'declaration', 'location', 'visibleType', 'scheduledTime', 'shopping_cart', 'collection', 'mini_app', 'nearby_show', 'allow_same_frame', 'allow_download', 'images', 'music'] },
   KuaiShouOpen: { code: 'KuaiShouOpen', name: '快手-Open', supportedTypes: ['video'], platformFields: ['title', 'declaration', 'location', 'visibleType', 'scheduledTime', 'shopping_cart', 'collection', 'mini_app', 'nearby_show', 'allow_same_frame', 'allow_download', 'music'] },
+  BiLiBiLiOpen: { code: 'BiLiBiLiOpen', name: '哔哩哔哩-Open', supportedTypes: ['video'], platformFields: ['title', 'tags', 'category', 'declaration', 'scheduledTime', 'contentSourceUrl', 'collection', 'covers'] },
   MeiPai: { code: 'MeiPai', name: '美拍', supportedTypes: ['video'], platformFields: ['title', 'category', 'scheduledTime'] },
   MeiYou: { code: 'MeiYou', name: '美柚', supportedTypes: ['video'], platformFields: ['title', 'scheduledTime'] },
   QiEHao: { code: 'QiEHao', name: '企鹅号', supportedTypes: ['video', 'article'], platformFields: ['title', 'tags', 'category', 'declaration', 'scheduledTime', 'covers', 'content'] },

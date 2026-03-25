@@ -93,6 +93,7 @@ function normalizePlatform(input) {
     // 平台别名映射
     const aliasMap = {
         "快手-Open": "KuaiShouOpen",
+        "哔哩哔哩-Open": "BiLiBiLiOpen",
         "B站": "BiLiBiLi",
         "百家号": "BaiJiaHao",
         "知乎": "ZhiHu",

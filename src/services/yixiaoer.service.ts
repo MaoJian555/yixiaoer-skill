@@ -359,6 +359,7 @@ export class YixiaoerService {
       "抖音": ["video", "imageText", "article"],
       "快手": ["video", "imageText"],
       "快手-Open": ["video"],
+      "哔哩哔哩-Open": ["video"],
       "小红书": ["video", "imageText"],
       "视频号": ["video", "imageText"],
       "哔哩哔哩": ["video", "article"],
