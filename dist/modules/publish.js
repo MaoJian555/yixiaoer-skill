@@ -685,4 +685,3 @@ export async function publishContent(params) {
         return handleError(error);
     }
 }
-//# sourceMappingURL=publish.js.map

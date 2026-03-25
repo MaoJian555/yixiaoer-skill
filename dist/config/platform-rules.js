@@ -124,4 +124,3 @@ export function validatePublishParams(platformCode, publishType) {
     }
     return { valid: true, errors: [] };
 }
-//# sourceMappingURL=platform-rules.js.map

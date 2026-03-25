@@ -1,6 +1,6 @@
 {
   "name": "yixiaoer-skill",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "蚁小二多平台内容发布 OpenClaw Skill - 支持抖音、小红书、B站、快手、视频号等40+平台一键发布",
   "type": "module",
   "main": "dist/index.js",

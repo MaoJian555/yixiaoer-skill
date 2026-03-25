@@ -114,4 +114,3 @@ export function clearClient() {
 export function setApiKey(apiKey) {
     configuredApiKey = apiKey;
 }
-//# sourceMappingURL=client.js.map

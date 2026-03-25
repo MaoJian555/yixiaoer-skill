@@ -290,4 +290,3 @@ export default async function (api) {
         api.logger.info("✅ 蚁小二多平台发布 Skill 已就绪");
     }
 }
-//# sourceMappingURL=index.js.map
