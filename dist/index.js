@@ -20,6 +20,9 @@ export default async function (api) {
     // ==================== 核心发布工具 ====================
     /**
      * 多平台统一发布（核心能力）
+     *
+     * 优化版本 v1.1.0:
+     * - 支持 videoKey 参数，直接使用已上传的 OSS 视频 key
      */
     api.registerTool({
         name: "multi-platform-publish",
@@ -35,7 +38,8 @@ export default async function (api) {
             platforms: Type.Array(Type.String(), {
                 description: "目标平台列表，如 ['抖音', '小红书', 'B站']"
             }),
-            videoPath: Type.Optional(Type.String({ description: "视频URL或本地路径（视频类型必填）" })),
+            videoPath: Type.Optional(Type.String({ description: "视频URL或本地路径（与 videoKey 二选一）" })),
+            videoKey: Type.Optional(Type.String({ description: "【优化】视频 OSS Key，已有视频时直接使用" })),
             imagePaths: Type.Optional(Type.Array(Type.String(), { description: "图片URL列表（图文类型必填）" })),
             coverPath: Type.Optional(Type.String({ description: "封面图片URL或路径" })),
             isDraft: Type.Optional(Type.Boolean({ default: false, description: "是否保存为草稿" })),
@@ -51,17 +55,25 @@ export default async function (api) {
     });
     /**
      * 发布视频
+     *
+     * 优化版本 v1.1.0:
+     * - 支持 videoKey 参数，直接使用已上传的 OSS 视频 key
+     * - 支持 coverKey 参数，直接使用已上传的 OSS 封面 key
+     * - 未提供封面时自动从视频提取（需安装 ffmpeg-static）
      */
     api.registerTool({
         name: "publish-video",
-        description: "发布视频到指定平台。支持抖音、快手、小红书、视频号、B站等28+平台。",
+        description: "发布视频到指定平台。支持抖音、快手、小红书、视频号、B站等28+平台。【新增】支持 videoKey/coverKey 直接使用已上传资源。",
         parameters: Type.Object({
             platform: Type.String({ description: "目标平台名称，如 '抖音'、'小红书'" }),
             accountName: Type.Optional(Type.String({ description: "账号名称关键字（用于匹配多账号）" })),
             title: Type.String({ description: "视频标题" }),
             description: Type.String({ description: "视频描述" }),
-            videoPath: Type.String({ description: "视频URL或本地路径" }),
-            coverPath: Type.Optional(Type.String({ description: "封面图片URL或路径" })),
+            videoPath: Type.Optional(Type.String({ description: "视频URL或本地路径（与 videoKey 二选一）" })),
+            videoKey: Type.Optional(Type.String({ description: "【优化】视频 OSS Key，已有视频时直接使用，避免重复上传" })),
+            coverPath: Type.Optional(Type.String({ description: "封面图片URL或路径（与 coverKey 二选一）" })),
+            coverKey: Type.Optional(Type.String({ description: "【优化】封面 OSS Key，已有封面时直接使用" })),
+            autoExtractCover: Type.Optional(Type.Boolean({ default: true, description: "【优化】未提供封面时自动从视频提取（需要 ffmpeg）" })),
             isDraft: Type.Optional(Type.Boolean({ default: false })),
             scheduledTime: Type.Optional(Type.Number()),
             declaration: Type.Optional(Type.Number({ description: "创作声明类型" })),

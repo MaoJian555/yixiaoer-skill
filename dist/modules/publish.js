@@ -366,17 +366,18 @@ export async function publishContent(params) {
                 message: "❌ 参数错误: 本机发布需要提供 clientId（设备号）",
             };
         }
-        if (publishType === "video" && !params.videoPath) {
+        // 视频资源校验：videoPath 或 videoKey 至少有一个
+        if (publishType === "video" && !params.videoPath && !params.videoKey) {
             return {
                 success: false,
-                message: "❌ 参数错误: video 类型需要提供 videoPath",
+                message: "❌ 参数错误: video 类型需要提供 videoPath 或 videoKey",
             };
         }
         // 视频发布：封面地址必填校验
         if (publishType === "video" && !params.coverPath && !params.coverKey) {
             return {
                 success: false,
-                message: "❌ 参数错误: video 类型需要提供封面图片地址 (coverPath)",
+                message: "❌ 参数错误: video 类型需要提供封面图片地址 (coverPath 或 coverKey)",
             };
         }
         if (publishType === "imageText" &&
@@ -435,30 +436,48 @@ export async function publishContent(params) {
             coverKey: params.coverKey,
             contentPublishForm: finalContentPublishForm,
         };
-        // 视频：远端 http 用 path，本地上传用 key
-        if (publishType === "video" && params.videoPath) {
-            // 检查是否是URL还是本地路径
-            if (params.videoPath.startsWith("http")) {
+        // 视频：支持三种模式
+        // 1. videoKey - 直接使用已上传的 OSS key
+        // 2. videoPath (http:// 或 https://) - 远程 URL
+        // 3. videoPath (本地路径) - 上传到 OSS
+        if (publishType === "video") {
+            if (params.videoKey) {
+                // 模式1: 直接使用 videoKey
+                console.log(`📎 使用已有视频Key: ${params.videoKey}`);
                 accountForm.video = {
-                    path: params.videoPath,
+                    key: params.videoKey,
                     duration: params.videoDuration || 0,
                     width: params.videoWidth || 1080,
                     height: params.videoHeight || 1920,
                     size: params.videoSize || 0,
                 };
             }
-            else {
-                // 本地路径 - 自动上传到OSS
-                console.log(`📤 正在上传视频到OSS: ${params.videoPath}`);
-                const videoInfo = await uploadFileToOss(params.videoPath, client);
-                console.log(`✅ 视频上传成功, key: ${videoInfo.key}`);
-                accountForm.video = {
-                    key: videoInfo.key,
-                    duration: params.videoDuration || 0,
-                    width: params.videoWidth || 1080,
-                    height: params.videoHeight || 1920,
-                    size: videoInfo.size,
-                };
+            else if (params.videoPath) {
+                // 检查是否是URL还是本地路径
+                if (params.videoPath.startsWith("http")) {
+                    // 模式2: 远程 URL
+                    console.log(`🌐 使用远程视频URL: ${params.videoPath}`);
+                    accountForm.video = {
+                        path: params.videoPath,
+                        duration: params.videoDuration || 0,
+                        width: params.videoWidth || 1080,
+                        height: params.videoHeight || 1920,
+                        size: params.videoSize || 0,
+                    };
+                }
+                else {
+                    // 模式3: 本地路径 - 自动上传到OSS
+                    console.log(`📤 正在上传视频到OSS: ${params.videoPath}`);
+                    const videoInfo = await uploadFileToOss(params.videoPath, client);
+                    console.log(`✅ 视频上传成功, key: ${videoInfo.key}`);
+                    accountForm.video = {
+                        key: videoInfo.key,
+                        duration: params.videoDuration || 0,
+                        width: params.videoWidth || 1080,
+                        height: params.videoHeight || 1920,
+                        size: videoInfo.size,
+                    };
+                }
             }
         }
         // 文章发布：封面地址必填校验

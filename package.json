@@ -1,17 +1,33 @@
 {
   "name": "yixiaoer-skill",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "蚁小二多平台内容发布 OpenClaw Skill - 支持抖音、小红书、B站、快手、视频号等40+平台一键发布",
   "type": "module",
   "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./internal/*": null,
+    "./services/*": null,
+    "./modules/*": null,
+    "./api/*": null,
+    "./config/*": null
+  },
   "scripts": {
     "build": "tsc",
+    "build:bundle": "node scripts/bundle-skill.mjs",
+    "build:all": "npm run build && npm run build:bundle",
+    "build:pkg": "powershell -File scripts/build-package.ps1",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
+    "start:bundle": "node dist/bundle/index.js",
     "test": "jest",
     "generate-docs": "node scripts/generate-platform-docs.mjs",
     "generate-rules": "node scripts/generate-platform-rules.mjs",
-    "sync": "node scripts/generate-platform-docs.mjs && node scripts/generate-platform-rules.mjs && tsc",
+    "sync": "node scripts/generate-platform-docs.mjs && node scripts/generate-platform-rules.mjs && npm run build",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
@@ -55,6 +71,7 @@
     "@types/fluent-ffmpeg": "^2.1.28",
     "@types/jest": "^29.0.0",
     "@types/node": "^20.0.0",
+    "esbuild": "^0.27.4",
     "jest": "^29.0.0",
     "typescript": "^5.0.0"
   },
@@ -64,9 +81,6 @@
   "files": [
     "dist",
     "SKILL.md",
-    "PLATFORM_FORMS.md",
-    "plugin.json",
-    "package.json",
-    "types.d.ts"
+    "PLATFORM_FORMS.md"
   ]
 }

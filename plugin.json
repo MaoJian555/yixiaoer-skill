@@ -1,8 +1,8 @@
 {
   "id": "yixiaoer-skill",
   "name": "蚁小二多平台发布",
-  "version": "1.0.4",
-  "description": "蚁小二自媒体多平台发布插件。集成40+主流平台内容一键发布、账号管理、数据监控。支持视频、图文、文章三种内容类型的批量同步发布。",
+  "version": "1.1.0",
+  "description": "蚁小二自媒体多平台发布插件。集成40+主流平台内容一键发布、账号管理、数据监控。支持视频、图文、文章三种内容类型的批量同步发布。【v1.1.0优化】增加videoKey/coverKey参数支持，避免重复上传；增加封面自动提取功能。",
   "main": "dist/index.js",
   "entry": "dist/index.js",
   "author": "yixiaoer",
@@ -60,6 +60,7 @@
       "total": 40
     },
     "features": [
+      "unified-entry",
       "multi-platform-publish",
       "batch-publish",
       "scheduled-publish",
@@ -68,59 +69,73 @@
       "content-monitoring",
       "auto-account-discovery",
       "form-validation",
-      "vip-check"
+      "vip-check",
+      "videoKey-support",
+      "coverKey-support",
+      "auto-extract-cover"
+    ],
+    "optimizations": [
+      {
+        "version": "1.1.0",
+        "changes": [
+          "增加 videoKey 参数，支持直接使用已上传的 OSS 视频 key",
+          "增加 coverKey 参数，支持直接使用已上传的 OSS 封面 key",
+          "增加 autoExtractCover 选项，未提供封面时自动从视频提取",
+          "使用 esbuild 打包所有模块，防止 AI 直接 import 内部方法"
+        ]
+      }
     ]
   },
   "tools": [
     {
-      "name": "multi-platform-publish",
-      "category": "publish",
-      "description": "一键发布到多个平台"
-    },
-    {
       "name": "publish-video",
       "category": "publish",
-      "description": "发布视频内容"
+      "description": "发布视频到指定平台。支持抖音、快手、小红书、视频号、B站等28+平台。【优化】支持 videoKey/coverKey 参数直接使用已上传资源，未提供封面时自动从视频提取。"
     },
     {
       "name": "publish-image-text",
       "category": "publish",
-      "description": "发布图文内容"
+      "description": "发布图文内容到指定平台。支持抖音、快手、小红书、视频号、微博等9个平台。"
     },
     {
       "name": "publish-article",
       "category": "publish",
-      "description": "发布文章内容"
+      "description": "发布文章到指定平台。支持微信公众号、百家号、头条号、知乎、微博等20+平台。"
+    },
+    {
+      "name": "multi-platform-publish",
+      "category": "publish",
+      "description": "一键发布到多个平台。"
+    },
+    {
+      "name": "batch-publish",
+      "category": "publish",
+      "description": "批量发布内容到多个平台。"
     },
     {
       "name": "list-accounts",
       "category": "account",
-      "description": "获取账号列表"
+      "description": "获取账号列表。"
     },
     {
       "name": "account-overviews",
       "category": "account",
-      "description": "获取账号概览"
+      "description": "获取账号数据概览。"
     },
     {
       "name": "content-overviews",
       "category": "data",
-      "description": "获取作品数据"
-    },
-    {
-      "name": "upload-url",
-      "category": "helper",
-      "description": "获取上传地址"
+      "description": "查询已发布作品的数据。"
     },
     {
       "name": "get-publish-preset",
       "category": "helper",
-      "description": "获取发布预设"
+      "description": "获取平台发布预设。"
     },
     {
       "name": "validate-form",
       "category": "helper",
-      "description": "验证表单字段"
+      "description": "验证发布表单。"
     }
   ]
 }
