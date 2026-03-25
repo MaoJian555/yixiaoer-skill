@@ -63,8 +63,10 @@
   },
   "files": [
     "dist",
-    "README.md",
     "SKILL.md",
-    "PLATFORM_FORMS.md"
+    "PLATFORM_FORMS.md",
+    "plugin.json",
+    "package.json",
+    "types.d.ts"
   ]
 }
