@@ -1,5 +1,5 @@
 {
-  "name": "@yixiaoer/openclaw-yixiaoer",
+  "name": "@yixiaoermail/openclaw-yixiaoer",
   "version": "1.2.0",
   "description": "蚁小二多平台内容发布 OpenClaw 插件 - 支持抖音、小红书、B站、快手、视频号等40+平台一键发布",
   "openclaw": {
@@ -8,6 +8,9 @@
     "extensions": [
       "./dist/index.js"
     ]
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -51,7 +54,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yixiaoer888/yixiaoer-skill"
+    "url": "git+https://github.com/yixiaoer888/yixiaoer-skill.git"
   },
   "bugs": {
     "url": "https://github.com/yixiaoer888/yixiaoer-skill/issues"
@@ -78,7 +81,7 @@
     "dist",
     "openclaw.plugin.json",
     "skills",
-    "README.md",
+    "package.json",
     "llms.txt"
   ]
 }
