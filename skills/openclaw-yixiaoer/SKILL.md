@@ -1,242 +1,128 @@
----
+﻿---
 name: openclaw-yixiaoer
-description: 蚁小二多平台内容发布 OpenClaw 插件。支持抖音、小红书、B站、快手、视频号等40+平台一键发布，集成账号管理与数据监控。基于 OpenClaw (小龙虾) 插件规范开发。
-license: MIT
-metadata:
-  author: yixiaoer
-  homepage: https://www.yixiaoer.cn
-  repository: https://github.com/yixiaoer888/yixiaoer-skill.git
-  version: 1.2.0
-  tags:
-    - yixiaoer
-    - openclaw
-    - openclaw-plugin
-    - publisher
-    - social-media
-    - multi-platform
-    - content-distribution
+description: 蚁小二（yixiaoer.cn）多平台内容发布 skill。涉及“发布视频”“发布图文”“发布文章”“一键分发”“批量发布”“查询账号”“查询作品数据”“获取平台发布表单”等操作时，请优先使用本 skill。
+homepage: https://www.yixiaoer.cn
+version: 2.0.0-draft
+author: yixiaoer
+metadata: {"openclaw":{"primaryEnv":"YIXIAOER_API_KEY","category":"publisher","tokenMode":"custom","emoji":"📣"}}
 ---
 
-# 蚁小二多平台发布 OpenClaw 插件
+# 蚁小二 Yixiaoer Skill
 
-基于 [蚁小二开放平台](https://www.yixiaoer.cn) 的多平台内容发布 OpenClaw Skill。
+本 skill 采用“说明层 + 远端 MCP 服务”结构：
 
-## ✨ 功能特性
+- 当前目录负责场景识别、工作流指引、工具选择
+- 蚁小二能力通过远端 MCP 服务对外暴露
+- 本仓库不运行本地 Node 服务
+- 实际业务执行由远端 MCP 服务内部调用蚁小二开放平台 API 完成
 
-- 🚀 **一键多平台发布** - 支持 40+ 主流平台
-- 📹 **视频发布** - 抖音、快手、小红书、视频号、B站等 28+ 平台
-- 🖼️ **图文发布** - 抖音、快手、小红书、视频号、微博等 9 平台
-- 📝 **文章发布** - 微信公众号、百家号、头条号、知乎等 20+ 平台
-- 🔄 **批量发布** - 一次操作，多平台同步
-- ⏰ **定时发布** - 支持预约发布时间
-- 📊 **数据监控** - 作品数据、账号概览查询
-- 🔍 **自动发现** - 智能匹配平台账号
+## 首次使用
 
-## 📋 支持平台
+先阅读：
 
-### 视频发布 (28+ 平台)
-抖音、快手、小红书、视频号、B站、微博、知乎、百家号、头条号、企鹅号、大鱼号、搜狐号、一点号、网易号、爱奇艺、腾讯视频、搜狐视频、AcFun、皮皮虾、多多视频、美拍、得物、车家号、易车号、蜂网、美柚等
+1. `references/auth.md`
+2. `references/api_references.md`
 
-### 图文发布 (9 平台)
-抖音、快手、小红书、视频号、微博、百家号、知乎、头条号
+如果尚未完成本地配置，执行：
 
-### 文章发布 (20+ 平台)
-微信公众号、百家号、头条号、知乎、微博、B站、CSDN、简书、豆瓣、企鹅号、搜狐号、一点号、网易号、大鱼号、快传号、雪球号、AcFun、爱奇艺、车家号、易车号等
-
-## 🔧 安装配置
-
-### 前置条件
-
-1. 安装 [OpenClaw (小龙虾)](https://www.molt.bot)
-2. 注册 [蚁小二](https://www.yixiaoer.cn) 账号
-3. 在蚁小二后台绑定自媒体账号
-4. 获取 API Key
-
-### 插件安装
-
-方式一：从 ClawHub 安装（推荐）
-```
-在 OpenClaw 技能市场中搜索"蚁小二"并安装
-```
-
-方式二：本地安装
 ```bash
-mkdir -p ~/.openclaw/extensions/openclaw-yixiaoer
-cp -r . ~/.openclaw/extensions/openclaw-yixiaoer/
+bash ./setup.sh yixiaoer_check
 ```
 
-### 配置 OpenClaw
+如返回 `CONFIG_REQUIRED` 或 `API_KEY_REQUIRED`，继续执行：
 
-修改 `~/.openclaw/openclaw.json`：
-
-```json
-{
-  "plugins": {
-    "load": {
-      "paths": [
-        "~/.openclaw/extensions/openclaw-yixiaoer"
-      ]
-    },
-    "entries": {
-      "openclaw-yixiaoer": {
-        "enabled": true,
-        "config": {
-          "apiKey": "your_yixiaoer_api_key"
-        }
-      }
-    }
-  },
-  "tools": {
-    "allow": [
-      "multi_platform_publish",
-      "publish_video",
-      "publish_image_text",
-      "publish_article",
-      "list_accounts",
-      "account_overviews",
-      "content_overviews",
-      "get_publish_preset",
-      "validate_form",
-      "batch_publish"
-    ]
-  }
-}
-```
-
-重启 OpenClaw：
 ```bash
-openclaw gateway restart
+bash ./setup.sh yixiaoer_configure
 ```
 
-## 🛠️ 工具列表
+## 场景入口
 
-### 发布工具
+- 场景：发布单个平台视频
+  - 阅读 `video/entry.md`
+  - 调用 `publish_video`
+- 场景：发布单个平台图文
+  - 阅读 `image_text/entry.md`
+  - 调用 `publish_image_text`
+- 场景：发布单个平台文章
+  - 阅读 `article/entry.md`
+  - 调用 `publish_article`
+- 场景：一份内容分发到多个平台
+  - 阅读 `batch/entry.md`
+  - 调用 `multi_platform_publish` 或 `batch_publish`
+- 场景：查询账号、账号概览、作品数据
+  - 阅读 `references/api_references.md`
+  - 调用 `list_accounts`、`account_overviews`、`content_overviews`
+- 场景：获取平台字段结构、校验发布参数
+  - 阅读 `references/api_references.md`
+  - 调用 `get_platform_form_schema`、`validate_form`
 
-| 工具 | 描述 |
-|------|------|
-| `multi_platform_publish` | 一键发布到多个平台 |
-| `publish_video` | 发布视频内容 |
-| `publish_image_text` | 发布图文内容 |
-| `publish_article` | 发布文章内容 |
+## 调用方式
 
-### 账号工具
+查看完整工具列表：
 
-| 工具 | 描述 |
-|------|------|
-| `list_accounts` | 获取账号列表 |
-| `account_overviews` | 获取账号概览 |
-| `list_groups` | 获取分组列表 |
-
-### 数据工具
-
-| 工具 | 描述 |
-|------|------|
-| `content_overviews` | 获取作品数据 |
-
-### 辅助工具
-
-| 工具 | 描述 |
-|------|------|
-| `upload_url` | 获取上传地址 |
-| `get_publish_preset` | 获取发布预设 |
-| `validate_form` | 验证表单字段 |
-
-## 📖 使用示例
-
-### 发布视频到多平台
-
-```
-使用 multi_platform_publish 工具：
-- title: "视频标题"
-- description: "视频描述"
-- publishType: "video"
-- platforms: ["抖音", "小红书", "B站"]
-- videoPath: "https://example.com/video.mp4"
+```bash
+mcporter list openclaw-yixiaoer
 ```
 
-### 发布图文到小红书
+调用工具的标准格式：
 
-```
-使用 publish_image_text 工具：
-- platform: "小红书"
-- title: "图文标题"
-- description: "正文内容"
-- imagePaths: ["https://example.com/1.jpg", "https://example.com/2.jpg"]
+```bash
+mcporter call "openclaw-yixiaoer" "工具名" --args '{"字段":"值"}'
 ```
 
-### 发布文章到微信公众号
+## 标准工作流
 
-```
-使用 publish_article 工具：
-- platform: "微信公众号"
-- title: "文章标题"
-- description: "文章正文（支持HTML）"
-```
+### 视频发布
 
-## 📊 发布参数
+1. 调用 `list_accounts` 获取可用账号
+2. 调用 `get_platform_form_schema` 获取视频字段结构
+3. 补齐视频、封面、声明、标签等字段
+4. 调用 `validate_form`
+5. 调用 `publish_video`
 
-### 必填字段
+### 图文发布
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| title | string | 标题（最大50字） |
-| description | string | 描述/正文（最大2000字） |
-| publishType | enum | video / imageText / article |
-| platforms | string[] | 目标平台列表 |
+1. 调用 `list_accounts`
+2. 调用 `get_platform_form_schema`
+3. 准备 `imagePaths`
+4. 调用 `validate_form`
+5. 调用 `publish_image_text`
 
-### 可选字段
+### 文章发布
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| videoPath | string | 视频URL/路径 |
-| imagePaths | string[] | 图片URL列表 |
-| coverPath | string | 封面图片 |
-| isDraft | boolean | 是否草稿 |
-| scheduledTime | number | 定时发布时间戳 |
+1. 调用 `list_accounts`
+2. 调用 `get_platform_form_schema`
+3. 准备正文、封面、分类、原创声明
+4. 调用 `validate_form`
+5. 调用 `publish_article`
 
-## 🔒 创作声明
+### 多平台批量分发
 
-各平台支持的创作声明类型：
+1. 调用 `list_accounts`
+2. 按目标平台拆分字段差异
+3. 调用 `get_platform_form_schema`
+4. 逐平台校验参数
+5. 调用 `multi_platform_publish` 或 `batch_publish`
+6. 汇总每个平台的发布结果
 
-| 平台 | 声明值 | 说明 |
-|------|--------|------|
-| 小红书 | 1, 2 | 虚构演绎 / AI合成 |
-| 抖音 | 3, 4, 5, 6 | AI生成 / 引人不适 / 虚构演绎 / 危险行为 |
-| B站 | 0-6 | 不申明 / AI合成 / 危险行为 / 仅供娱乐等 |
+## 核心工具
 
-## 📁 项目结构
+- `list_accounts`
+- `list_groups`
+- `account_overviews`
+- `content_overviews`
+- `get_upload_url`
+- `get_platform_form_schema`
+- `validate_form`
+- `publish_video`
+- `publish_image_text`
+- `publish_article`
+- `multi_platform_publish`
+- `batch_publish`
 
-```
-yixiaoer-skill/
-├── src/
-│   ├── index.ts                    # 插件入口
-│   ├── api/                        # API 客户端
-│   ├── modules/                    # 功能模块
-│   ├── services/                   # 服务层
-│   └── types/                      # 类型定义
-├── dist/                           # 编译输出
-├── skills/
-│   └── openclaw-yixiaoer/
-│       ├── SKILL.md                # 本文档
-│       ├── PLATFORM_FORMS.md       # 平台字段百科
-│       └── platforms/              # 平台规则文档
-├── openclaw.plugin.json            # 插件配置
-└── package.json
-```
+## 设计约束
 
-## ⚠️ 注意事项
-
-1. **API Key 必填** - 需在蚁小二后台获取
-2. **账号绑定** - 发布前需绑定目标平台账号
-3. **VIP 权限** - 部分功能需要 VIP 权限
-4. **素材处理** - 本地文件需先通过 upload_url 上传
-
-## 📄 许可证
-
-MIT
-
-## 🔗 相关链接
-
-- [蚁小二官网](https://www.yixiaoer.cn)
-- [OpenClaw 文档](https://docs.openclaw.ai)
-- [问题反馈](https://github.com/yixiaoer888/yixiaoer-skill/issues) 
+- skill 文档层不直接访问蚁小二 HTTP API
+- 所有执行能力都通过远端 MCP 工具暴露
+- 平台差异通过 schema 和平台规则文档控制
+- `platforms/` 目录继续作为平台规则知识库使用
