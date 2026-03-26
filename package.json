@@ -25,7 +25,8 @@
     "test": "jest",
     "generate-docs": "node scripts/generate-platform-docs.mjs",
     "generate-rules": "node scripts/generate-platform-rules.mjs",
-    "sync": "node scripts/generate-platform-docs.mjs && node scripts/generate-platform-rules.mjs && npm run build",
+    "generate-form-schema": "node scripts/generate-platform-form-schema.mjs",
+    "sync": "node scripts/generate-platform-docs.mjs && node scripts/generate-platform-rules.mjs && node scripts/generate-platform-form-schema.mjs && npm run build",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
@@ -83,5 +84,8 @@
     "skills",
     "package.json",
     "llms.txt"
-  ]
+  ],
+  "peerDependencies": {
+    "openclaw": ">=2026.3.22"
+  }
 }

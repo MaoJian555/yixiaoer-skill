@@ -1,4 +1,5 @@
 import { getClient } from '../api/client.js';
+import { PLATFORM_FORM_SCHEMA } from '../config/platform-form-schema.js';
 import type {
   ListAccountsParams,
   ListGroupsParams,
@@ -99,6 +100,214 @@ export async function getPublishPreset(params: { platformAccountId: string }): P
       message: `❌ 获取发布预设失败: ${(error as Error).message}`,
     };
   }
+}
+
+export async function getPlatformFormSchema(params: { platform: string; publishType?: string }): Promise<SkillResult> {
+  try {
+    const client = getClient();
+    
+    const { platform, publishType } = params;
+    
+    const accounts = await client.getAccounts({ page: 1, size: 200, loginStatus: 1 });
+    
+    const targetAccounts = accounts.data?.filter((a: any) => 
+      a.platformName.includes(platform) || platform.includes(a.platformName)
+    ) || [];
+    
+    if (targetAccounts.length === 0) {
+      return {
+        success: false,
+        message: `❌ 未找到平台 '${platform}' 的账号`,
+      };
+    }
+
+    const accountId = targetAccounts[0].id;
+    const presetResult = await client.getPublishPreset(accountId);
+    
+    const { PLATFORM_RULES } = await import('../config/platform-rules.js');
+    
+    let platformCode: string | null = null;
+    for (const [code, rule] of Object.entries(PLATFORM_RULES)) {
+      if (rule.name === platform || code === platform) {
+        platformCode = code;
+        break;
+      }
+    }
+    
+    if (!platformCode) {
+      return {
+        success: false,
+        message: `❌ 不支持的平台: ${platform}`,
+      };
+    }
+    
+    const rule = PLATFORM_RULES[platformCode];
+    const supportedTypes = rule?.supportedTypes || [];
+    const mdSchema =
+      PLATFORM_FORM_SCHEMA[platformCode] ??
+      Object.values(PLATFORM_FORM_SCHEMA).find((item) => item.platformTitle === platform);
+
+    if (mdSchema) {
+      const forms = publishType
+        ? mdSchema.forms.filter((form) => form.publishType === publishType)
+        : mdSchema.forms;
+
+      if (forms.length === 0) {
+        return {
+          success: false,
+          message: `❌ 平台 ${platform} 不支持 ${publishType} 类型`,
+        };
+      }
+
+      const fieldsDetail = forms.flatMap((form) =>
+        form.fields.map((field) => ({
+          ...field,
+          formName: form.formName,
+          formLabel: form.formLabel,
+        }))
+      );
+
+      let message = `📋 ${platform} 发布表单结构:\n\n`;
+      message += `支持的内容类型: ${supportedTypes.join(', ')}\n\n`;
+
+      for (const form of forms) {
+        message += `【${form.formLabel}】${form.formName}\n`;
+        for (const field of form.fields) {
+          const requiredText = field.required ? '必填' : '选填';
+          message += `- ${field.name} [${field.rawType}] ${requiredText}\n`;
+          message += `  说明: ${field.description}\n`;
+          if (field.valueRange) {
+            message += `  值范围: ${field.valueRange}\n`;
+          }
+          if (field.example) {
+            message += `  示例: ${field.example}\n`;
+          }
+        }
+        message += '\n';
+      }
+
+      message += `💡 使用说明:\n`;
+      message += `1. 优先调用 get_publish_preset 获取分类/话题等动态选项\n`;
+      message += `2. 按上述字段填写 contentPublishForm\n`;
+      message += `3. 若值范围写有“互斥”，表示该字段不能与特定字段同时传入\n`;
+
+      return {
+        success: true,
+        message,
+        data: {
+          platform,
+          platformCode,
+          supportedTypes,
+          forms,
+          fields: fieldsDetail,
+          preset: presetResult,
+        },
+      };
+    }
+    
+    let typeSpecificFields: string[] = [];
+    if (publishType && supportedTypes.includes(publishType as any)) {
+      typeSpecificFields = getFieldsForType(publishType, rule.platformFields);
+    } else {
+      typeSpecificFields = [...new Set(supportedTypes.flatMap(t => getFieldsForType(t, rule.platformFields)))];
+    }
+    
+    const baseFields = ['title', 'description'];
+    const allFields = [...new Set([...baseFields, ...typeSpecificFields])];
+    
+    const fieldsDetail = allFields.map(field => ({
+      name: field,
+      description: field,
+      required: field === 'title' || field === 'description',
+      example: getFieldExample(field, publishType || 'video'),
+    }));
+    
+    let message = `📋 ${platform} 发布表单结构:\n\n`;
+    message += `支持的内容类型: ${supportedTypes.join(', ')}\n\n`;
+    message += `字段列表 (共 ${fieldsDetail.length} 个):\n\n`;
+    
+    for (const field of fieldsDetail) {
+      const requiredStar = field.required ? '⭐' : '  ';
+      message += `${requiredStar}${field.name}: ${field.description}\n`;
+      if (field.example) {
+        message += `   示例: ${field.example}\n`;
+      }
+    }
+    
+    message += `\n💡 使用说明:\n`;
+    message += `1. 调用 get_publish_preset 获取该平台的分类/话题选项\n`;
+    message += `2. 在 contentPublishForm 中传入以上字段\n`;
+    message += `3. 示例:\n`;
+    message += `   contentPublishForm: {\n`;
+    message += `     title: "视频标题",\n`;
+    message += `     description: "视频描述",\n`;
+    message += `     tags: ["标签1"],\n`;
+    message += `     category: ["分类1"],\n`;
+    message += `     declaration: 0\n`;
+    message += `   }`;
+    
+    return {
+      success: true,
+      message,
+      data: {
+        platform: platform,
+        platformCode,
+        supportedTypes,
+        fields: fieldsDetail,
+        preset: presetResult,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `❌ 获取平台表单结构失败: ${(error as Error).message}`,
+    };
+  }
+}
+
+function getFieldsForType(publishType: string, platformFields: string[]): string[] {
+  const typeSpecificFields: Record<string, string[]> = {
+    video: ['video', 'covers', 'horizontalCover', 'videoDuration', 'videoWidth', 'videoHeight'],
+    article: ['content', 'verticalCovers', 'covers'],
+    imageText: ['images', 'covers'],
+  };
+  
+  const extra = typeSpecificFields[publishType] || [];
+  return [...platformFields, ...extra];
+}
+
+function getFieldExample(field: string, publishType: string): string {
+  const examples: Record<string, string> = {
+    title: '"我的第一个视频"',
+    description: '"这是视频描述内容..."',
+    tags: '["标签1", "标签2"]',
+    category: '["科技"]',
+    declaration: '0 (0=原创, 1=转载)',
+    location: '{"name": "北京", "lat": 39.9, "lng": 116.4}',
+    scheduledTime: '1704067200000',
+    collection: '"合集ID"',
+    visibleType: '0 (0=公开, 1=私密)',
+    allow_save: '1',
+    allow_download: '1',
+    shopping_cart: '0',
+    topics: '["#话题1#"]',
+    covers: '[{"key": "oss-key", "width": 1080, "height": 1920}]',
+    horizontalCover: '{"key": "oss-key"}',
+    content: '"<p>文章内容</p>"',
+    createType: '0',
+    pubType: '0',
+    contentSourceUrl: '"https://example.com"',
+    music: '{"id": "音乐ID", "name": "音乐名"}',
+    short_title: '"短标题"',
+    images: '[{"key": "oss-key", "width": 1080, "height": 1920}]',
+    sex: '0',
+    country: '"中国"',
+    province: '"北京"',
+    city: '"北京"',
+    notifySubscribers: '1',
+  };
+  
+  return examples[field] || '根据平台要求填写';
 }
 
 export async function listGroups(params: ListGroupsParams): Promise<SkillResult> {

@@ -573,6 +573,14 @@ export class YixiaoerService {
   }
 
   /**
+   * 获取平台发布表单结构
+   * 返回平台支持的字段列表及示例，用于组装发布数据
+   */
+  public async getPlatformFormSchema(params: { platform: string; publishType?: string }): Promise<SkillResult> {
+    return accountModule.getPlatformFormSchema(params);
+  }
+
+  /**
    * 验证表单字段
    */
   public async validateForm(params: { platform: string; publishType: string; data: any }): Promise<SkillResult> {

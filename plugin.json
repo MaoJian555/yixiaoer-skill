@@ -1,8 +1,8 @@
 {
   "id": "yixiaoer-skill",
   "name": "蚁小二多平台发布",
-  "version": "1.1.0",
-  "description": "蚁小二自媒体多平台发布插件。集成40+主流平台内容一键发布、账号管理、数据监控。支持视频、图文、文章三种内容类型的批量同步发布。【v1.1.0优化】增加videoKey/coverKey参数支持，避免重复上传；增加封面自动提取功能。",
+  "version": "1.2.0",
+  "description": "蚁小二自媒体多平台发布插件。集成40+主流平台内容一键发布、账号管理、数据监控。支持视频、图文、文章三种内容类型的批量同步发布。【v1.1.0优化】增加videoKey/coverKey参数支持，避免重复上传；增加封面自动提取功能。【v1.2.0】新增 get_platform_form_schema 工具，获取平台表单结构以便快速组装发布数据。",
   "main": "dist/index.js",
   "entry": "dist/index.js",
   "author": "yixiaoer",
