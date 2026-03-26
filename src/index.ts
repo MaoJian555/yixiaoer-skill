@@ -1,25 +1,44 @@
 import { Type } from "@sinclair/typebox";
 import { YixiaoerService } from "./services/yixiaoer.service.js";
+import type { SkillResult } from "../types.d.ts";
 
-/**
- * 蚁小二多平台发布 Skill - OpenClaw 插件入口
- * 
- * 功能特性：
- * - 支持 40+ 平台内容发布
- * - 视频发布、图文发布、文章发布
- * - 账号管理与数据监控
- * - 自动账号发现与匹配
- * - VIP 权限预检
- */
+interface PluginAPI {
+  registerTool: (tool: {
+    name: string;
+    description: string;
+    parameters: unknown;
+    execute: (_id: string, params: Record<string, unknown>) => Promise<SkillResult>;
+  }, opts?: { optional?: boolean }) => void;
+  pluginConfig: { apiKey?: string; platformAccounts?: Record<string, string> };
+  logger?: { info?: (msg: string) => void; error?: (msg: string) => void };
+}
 
-const service = YixiaoerService.getInstance();
+const yixiaoerPlugin = {
+  id: "openclaw-yixiaoer",
+  name: "蚁小二多平台发布",
+  description: "蚁小二自媒体多平台发布插件。集成40+主流平台内容一键发布、账号管理、数据监控。支持视频、图文、文章三种内容类型的批量同步发布。",
+  kind: "tool" as const,
 
-export default async function (api: any): Promise<void> {
-  // 设置全局 API Key
-  if (api?.config?.apiKey) {
-    const { setApiKey } = await import("./api/client.js");
-    setApiKey(api.config.apiKey);
-  }
+  configSchema: Type.Object({
+    apiKey: Type.String({ minLength: 1 }),
+    platformAccounts: Type.Optional(Type.Record(Type.String(), Type.String()))
+  }),
+  uiHints: {
+    apiKey: {
+      label: "蚁小二 API Key",
+      sensitive: true,
+      placeholder: "从蚁小二后台获取",
+      help: "在蚁小二开放平台获取 API Key"
+    }
+  },
+
+  async register(api: PluginAPI) {
+    const service = YixiaoerService.getInstance();
+    
+    if (api.pluginConfig?.apiKey) {
+      const client = await import("./api/client.js");
+      client.setApiKey(api.pluginConfig.apiKey);
+    }
 
   // ==================== 核心发布工具 ====================
 
@@ -321,4 +340,9 @@ export default async function (api: any): Promise<void> {
   if (api.logger?.info) {
     api.logger.info("✅ 蚁小二多平台发布 Skill 已就绪");
   }
+  }
+};
+
+export function definePluginEntry() {
+  return yixiaoerPlugin;
 }

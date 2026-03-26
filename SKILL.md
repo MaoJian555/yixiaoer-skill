@@ -1,22 +1,23 @@
 ---
-name: yixiaoer-skill
-description: 蚁小二多平台内容发布 OpenClaw Skill。支持抖音、小红书、B站、快手、视频号等40+平台一键发布，集成账号管理与数据监控。
+name: openclaw-yixiaoer
+description: 蚁小二多平台内容发布 OpenClaw 插件。支持抖音、小红书、B站、快手、视频号等40+平台一键发布，集成账号管理与数据监控。基于 OpenClaw (小龙虾) 插件规范开发。
 license: MIT
 metadata:
   author: yixiaoer
   homepage: https://www.yixiaoer.cn
   repository: https://github.com/yixiaoer888/yixiaoer-skill.git
-  version: 1.0.4
+  version: 1.2.0
   tags:
     - yixiaoer
-    - openclaw-skill  
+    - openclaw
+    - openclaw-plugin
     - publisher
     - social-media
     - multi-platform
     - content-distribution
 ---
 
-# 蚁小二多平台发布 Skill
+# 蚁小二多平台发布 OpenClaw 插件
 
 基于 [蚁小二开放平台](https://www.yixiaoer.cn) 的多平台内容发布 OpenClaw Skill。
 
@@ -46,16 +47,65 @@ metadata:
 
 ### 前置条件
 
-1. 注册 [蚁小二](https://www.yixiaoer.cn) 账号
-2. 在蚁小二后台绑定自媒体账号
-3. 获取 API Key
+1. 安装 [OpenClaw (小龙虾)](https://www.molt.bot)
+2. 注册 [蚁小二](https://www.yixiaoer.cn) 账号
+3. 在蚁小二后台绑定自媒体账号
+4. 获取 API Key
 
-### 配置
+### 插件安装
+
+方式一：从 ClawHub 安装（推荐）
+```
+在 OpenClaw 技能市场中搜索"蚁小二"并安装
+```
+
+方式二：本地安装
+```bash
+mkdir -p ~/.openclaw/extensions/openclaw-yixiaoer
+cp -r . ~/.openclaw/extensions/openclaw-yixiaoer/
+```
+
+### 配置 OpenClaw
+
+修改 `~/.openclaw/openclaw.json`：
 
 ```json
 {
-  "apiKey": "your_yixiaoer_api_key"
+  "plugins": {
+    "load": {
+      "paths": [
+        "~/.openclaw/extensions/openclaw-yixiaoer"
+      ]
+    },
+    "entries": {
+      "openclaw-yixiaoer": {
+        "enabled": true,
+        "config": {
+          "apiKey": "your_yixiaoer_api_key"
+        }
+      }
+    }
+  },
+  "tools": {
+    "allow": [
+      "multi-platform-publish",
+      "publish-video",
+      "publish-image-text",
+      "publish-article",
+      "list-accounts",
+      "account-overviews",
+      "content-overviews",
+      "get-publish-preset",
+      "validate-form",
+      "batch-publish"
+    ]
+  }
 }
+```
+
+重启 OpenClaw：
+```bash
+openclaw gateway restart
 ```
 
 ## 🛠️ 工具列表
@@ -159,16 +209,17 @@ metadata:
 ```
 yixiaoer-skill/
 ├── src/
-│   ├── index.ts           # Skill 入口
+│   ├── index.ts           # 插件入口
 │   ├── api/               # API 客户端
 │   ├── modules/           # 功能模块
 │   ├── services/          # 服务层
 │   └── types/             # 类型定义
 ├── dist/                  # 编译输出
 ├── docs/                  # 平台文档
+├── openclaw.plugin.json   # 插件配置
 ├── SKILL.md               # 本文档
 ├── PLATFORM_FORMS.md      # 平台字段百科
-└── openclaw.plugin.json   # 插件配置
+└── package.json
 ```
 
 ## ⚠️ 注意事项

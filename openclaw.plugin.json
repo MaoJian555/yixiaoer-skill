@@ -1,0 +1,37 @@
+{
+  "id": "openclaw-yixiaoer",
+  "name": "蚁小二多平台发布",
+  "description": "蚁小二自媒体多平台发布插件。集成40+主流平台内容一键发布、账号管理、数据监控。支持视频、图文、文章三种内容类型的批量同步发布。",
+  "kind": "tool",
+  "resources": {
+    "skill": {
+      "entry": "SKILL.md",
+      "files": [
+        "SKILL.md",
+        "PLATFORM_FORMS.md"
+      ],
+      "directories": [
+        "docs/platforms"
+      ]
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["apiKey"],
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "description": "蚁小二 API Key（必填，从蚁小二后台获取）"
+      }
+    }
+  },
+  "uiHints": {
+    "apiKey": {
+      "label": "蚁小二 API Key",
+      "sensitive": true,
+      "placeholder": "从蚁小二后台获取",
+      "help": "在蚁小二开放平台获取 API Key"
+    }
+  }
+}

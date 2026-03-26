@@ -1,21 +1,14 @@
 {
-  "name": "yixiaoer-skill",
-  "version": "1.1.0",
-  "description": "蚁小二多平台内容发布 OpenClaw Skill - 支持抖音、小红书、B站、快手、视频号等40+平台一键发布",
+  "name": "@yixiaoer/openclaw-yixiaoer",
+  "version": "1.2.0",
+  "description": "蚁小二多平台内容发布 OpenClaw 插件 - 支持抖音、小红书、B站、快手、视频号等40+平台一键发布",
+  "openclaw": {
+    "type": "skill",
+    "id": "openclaw-yixiaoer",
+    "extensions": ["./index.ts"]
+  },
   "type": "module",
   "main": "dist/index.js",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./internal/*": null,
-    "./services/*": null,
-    "./modules/*": null,
-    "./api/*": null,
-    "./config/*": null
-  },
   "scripts": {
     "build": "tsc",
     "build:bundle": "node scripts/bundle-skill.mjs",
@@ -34,7 +27,8 @@
   "keywords": [
     "yixiaoer",
     "openclaw",
-    "openclaw-skill",
+    "openclaw-plugin",
+    "openclaw-yixiaoer",
     "publisher",
     "social-media",
     "multi-platform",
@@ -80,7 +74,10 @@
   },
   "files": [
     "dist",
+    "manifest.json",
+    "openclaw.plugin.json",
     "SKILL.md",
-    "PLATFORM_FORMS.md"
+    "PLATFORM_FORMS.md",
+    "docs/platforms"
   ]
 }
