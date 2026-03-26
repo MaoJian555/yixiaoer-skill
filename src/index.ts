@@ -9,7 +9,8 @@ interface PluginAPI {
     parameters: unknown;
     execute: (_id: string, params: Record<string, unknown>) => Promise<SkillResult>;
   }, opts?: { optional?: boolean }) => void;
-  pluginConfig: { apiKey?: string; platformAccounts?: Record<string, string> };
+  pluginConfig?: { apiKey?: string; platformAccounts?: Record<string, string> };
+  config?: { apiKey?: string; platformAccounts?: Record<string, string> };
   logger?: { info?: (msg: string) => void; error?: (msg: string) => void };
 }
 
@@ -34,10 +35,11 @@ const yixiaoerPlugin = {
 
   async register(api: PluginAPI) {
     const service = YixiaoerService.getInstance();
-    
-    if (api.pluginConfig?.apiKey) {
+    const pluginConfig = api.pluginConfig ?? api.config;
+
+    if (pluginConfig?.apiKey) {
       const client = await import("./api/client.js");
-      client.setApiKey(api.pluginConfig.apiKey);
+      client.setApiKey(pluginConfig.apiKey);
     }
 
   // ==================== 核心发布工具 ====================
@@ -49,7 +51,7 @@ const yixiaoerPlugin = {
    * - 支持 videoKey 参数，直接使用已上传的 OSS 视频 key
    */
   api.registerTool({
-    name: "multi-platform-publish",
+    name: "multi_platform_publish",
     description: "【核心能力】一键发布内容到多个平台。支持视频、图文、文章三种类型，批量执行并返回各平台独立状态。",
     parameters: Type.Object({
       title: Type.String({ description: "标题（必填，最大50字）" }),
@@ -87,7 +89,7 @@ const yixiaoerPlugin = {
    * - 未提供封面时自动从视频提取（需安装 ffmpeg-static）
    */
   api.registerTool({
-    name: "publish-video",
+    name: "publish_video",
     description: "发布视频到指定平台。支持抖音、快手、小红书、视频号、B站等28+平台。【新增】支持 videoKey/coverKey 直接使用已上传资源。",
     parameters: Type.Object({
       platform: Type.String({ description: "目标平台名称，如 '抖音'、'小红书'" }),
@@ -114,7 +116,7 @@ const yixiaoerPlugin = {
    * 发布图文
    */
   api.registerTool({
-    name: "publish-image-text",
+    name: "publish_image_text",
     description: "发布图文内容到指定平台。支持抖音、快手、小红书、视频号、微博等9个平台。",
     parameters: Type.Object({
       platform: Type.String({ description: "目标平台名称" }),
@@ -136,7 +138,7 @@ const yixiaoerPlugin = {
    * 发布文章
    */
   api.registerTool({
-    name: "publish-article",
+    name: "publish_article",
     description: "发布文章到指定平台。支持微信公众号、百家号、头条号、知乎、微博等20+平台。",
     parameters: Type.Object({
       platform: Type.String({ description: "目标平台名称" }),
@@ -161,7 +163,7 @@ const yixiaoerPlugin = {
    * 获取账号列表
    */
   api.registerTool({
-    name: "list-accounts",
+    name: "list_accounts",
     description: "获取蚁小二已绑定的账号列表。返回所有登录状态正常的账号信息。",
     parameters: Type.Object({
       platform: Type.Optional(Type.String({ description: "平台名称筛选" })),
@@ -178,7 +180,7 @@ const yixiaoerPlugin = {
    * 获取账号概览
    */
   api.registerTool({
-    name: "account-overviews",
+    name: "account_overviews",
     description: "获取账号数据概览，包括粉丝数、作品数等统计信息。",
     parameters: Type.Object({
       platform: Type.String({ description: "平台名称（必填）" }),
@@ -196,7 +198,7 @@ const yixiaoerPlugin = {
    * 获取分组列表
    */
   api.registerTool({
-    name: "list-groups",
+    name: "list_groups",
     description: "获取分组列表。通过分组可以查出分组里面的账号信息。",
     parameters: Type.Object({
       name: Type.Optional(Type.String({ description: "分组名称筛选" })),
@@ -219,7 +221,7 @@ const yixiaoerPlugin = {
    * 获取作品数据
    */
   api.registerTool({
-    name: "content-overviews",
+    name: "content_overviews",
     description: "查询已发布作品的数据列表，支持多维度筛选。",
     parameters: Type.Object({
       platformAccountId: Type.Optional(Type.String({ description: "平台账号ID" })),
@@ -242,7 +244,7 @@ const yixiaoerPlugin = {
    * 获取上传地址
    */
   api.registerTool({
-    name: "upload-url",
+    name: "upload_url",
     description: "获取素材上传地址。本地文件需先调用此接口获取上传Key后再发布。",
     parameters: Type.Object({
       fileName: Type.String({ description: "文件名" }),
@@ -258,7 +260,7 @@ const yixiaoerPlugin = {
    * 获取发布预设
    */
   api.registerTool({
-    name: "get-publish-preset",
+    name: "get_publish_preset",
     description: "获取平台发布预设数据，包括分类、话题、标签等选项。",
     parameters: Type.Object({
       platformAccountId: Type.String({ description: "平台账号ID" })
@@ -272,7 +274,7 @@ const yixiaoerPlugin = {
    * 验证表单字段
    */
   api.registerTool({
-    name: "validate-form",
+    name: "validate_form",
     description: "验证发布表单是否符合平台要求，返回缺失字段和错误信息。",
     parameters: Type.Object({
       platform: Type.String({ description: "平台名称" }),
@@ -288,7 +290,7 @@ const yixiaoerPlugin = {
    * 批量发布（一次请求多账号）
    */
   api.registerTool({
-    name: "batch-publish",
+    name: "batch_publish",
     description: "批量发布内容到多个平台。一次请求可传多个 accountForms，支持视频、图文、文章类型。",
     parameters: Type.Object({
       accountForms: Type.Array(Type.Object({
@@ -342,6 +344,8 @@ const yixiaoerPlugin = {
   }
   }
 };
+
+export default yixiaoerPlugin;
 
 export function definePluginEntry() {
   return yixiaoerPlugin;

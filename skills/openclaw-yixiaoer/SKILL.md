@@ -88,16 +88,16 @@ cp -r . ~/.openclaw/extensions/openclaw-yixiaoer/
   },
   "tools": {
     "allow": [
-      "multi-platform-publish",
-      "publish-video",
-      "publish-image-text",
-      "publish-article",
-      "list-accounts",
-      "account-overviews",
-      "content-overviews",
-      "get-publish-preset",
-      "validate-form",
-      "batch-publish"
+      "multi_platform_publish",
+      "publish_video",
+      "publish_image_text",
+      "publish_article",
+      "list_accounts",
+      "account_overviews",
+      "content_overviews",
+      "get_publish_preset",
+      "validate_form",
+      "batch_publish"
     ]
   }
 }
@@ -114,39 +114,39 @@ openclaw gateway restart
 
 | 工具 | 描述 |
 |------|------|
-| `multi-platform-publish` | 一键发布到多个平台 |
-| `publish-video` | 发布视频内容 |
-| `publish-image-text` | 发布图文内容 |
-| `publish-article` | 发布文章内容 |
+| `multi_platform_publish` | 一键发布到多个平台 |
+| `publish_video` | 发布视频内容 |
+| `publish_image_text` | 发布图文内容 |
+| `publish_article` | 发布文章内容 |
 
 ### 账号工具
 
 | 工具 | 描述 |
 |------|------|
-| `list-accounts` | 获取账号列表 |
-| `account-overviews` | 获取账号概览 |
-| `list-groups` | 获取分组列表 |
+| `list_accounts` | 获取账号列表 |
+| `account_overviews` | 获取账号概览 |
+| `list_groups` | 获取分组列表 |
 
 ### 数据工具
 
 | 工具 | 描述 |
 |------|------|
-| `content-overviews` | 获取作品数据 |
+| `content_overviews` | 获取作品数据 |
 
 ### 辅助工具
 
 | 工具 | 描述 |
 |------|------|
-| `upload-url` | 获取上传地址 |
-| `get-publish-preset` | 获取发布预设 |
-| `validate-form` | 验证表单字段 |
+| `upload_url` | 获取上传地址 |
+| `get_publish_preset` | 获取发布预设 |
+| `validate_form` | 验证表单字段 |
 
 ## 📖 使用示例
 
 ### 发布视频到多平台
 
 ```
-使用 multi-platform-publish 工具：
+使用 multi_platform_publish 工具：
 - title: "视频标题"
 - description: "视频描述"
 - publishType: "video"
@@ -157,7 +157,7 @@ openclaw gateway restart
 ### 发布图文到小红书
 
 ```
-使用 publish-image-text 工具：
+使用 publish_image_text 工具：
 - platform: "小红书"
 - title: "图文标题"
 - description: "正文内容"
@@ -167,7 +167,7 @@ openclaw gateway restart
 ### 发布文章到微信公众号
 
 ```
-使用 publish-article 工具：
+使用 publish_article 工具：
 - platform: "微信公众号"
 - title: "文章标题"
 - description: "文章正文（支持HTML）"
@@ -209,16 +209,18 @@ openclaw gateway restart
 ```
 yixiaoer-skill/
 ├── src/
-│   ├── index.ts           # 插件入口
-│   ├── api/               # API 客户端
-│   ├── modules/           # 功能模块
-│   ├── services/          # 服务层
-│   └── types/             # 类型定义
-├── dist/                  # 编译输出
-├── docs/                  # 平台文档
-├── openclaw.plugin.json   # 插件配置
-├── SKILL.md               # 本文档
-├── PLATFORM_FORMS.md      # 平台字段百科
+│   ├── index.ts                    # 插件入口
+│   ├── api/                        # API 客户端
+│   ├── modules/                    # 功能模块
+│   ├── services/                   # 服务层
+│   └── types/                      # 类型定义
+├── dist/                           # 编译输出
+├── skills/
+│   └── openclaw-yixiaoer/
+│       ├── SKILL.md                # 本文档
+│       ├── PLATFORM_FORMS.md       # 平台字段百科
+│       └── platforms/              # 平台规则文档
+├── openclaw.plugin.json            # 插件配置
 └── package.json
 ```
 
@@ -227,7 +229,7 @@ yixiaoer-skill/
 1. **API Key 必填** - 需在蚁小二后台获取
 2. **账号绑定** - 发布前需绑定目标平台账号
 3. **VIP 权限** - 部分功能需要 VIP 权限
-4. **素材处理** - 本地文件需先通过 upload-url 上传
+4. **素材处理** - 本地文件需先通过 upload_url 上传
 
 ## 📄 许可证
 

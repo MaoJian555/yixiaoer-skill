@@ -25,33 +25,33 @@ npm run build
 > **核心能力**：本插件提供多平台内容发布核心能力，包括视频发布、图文发布、文章发布等。
 > **非核心能力**：其他接口（如团队管理、用户管理、素材库管理、媒体账号管理等）可通过 [llms.txt](./llms.txt) 识别。
 
-- `list-accounts` 获取账号列表（loginStatus=1）
-- `account-overviews` 账号概览（新版）
-- `content-overviews` 作品数据列表
-- `publish-video` 发布视频
-- `publish-image-text` 发布图文
-- `publish-article` 发布文章
+- `list_accounts` 获取账号列表（loginStatus=1）
+- `account_overviews` 账号概览（新版）
+- `content_overviews` 作品数据列表
+- `publish_video` 发布视频
+- `publish_image_text` 发布图文
+- `publish_article` 发布文章
 - `get-publish-records` 获取发布记录
-- `upload-url` 获取上传 URL
+- `upload_url` 获取上传 URL
 
-注意：`publish` 为内部接口，不对外暴露。针对不同内容类型，请根据意图选择 `publish-video`、`publish-image-text` 或 `publish-article`。
+注意：`publish` 为内部接口，不对外暴露。针对不同内容类型，请根据意图选择 `publish_video`、`publish_image_text` 或 `publish_article`。
 
 ## 发布流程（标准）
 
-1. `list-accounts` 获取有效账号列表
+1. `list_accounts` 获取有效账号列表
 2. 匹配 `platformAccountId`
-3. 按需准备素材（若为本地文件，先通过 `upload-url` 获 Key）
+3. 按需准备素材（若为本地文件，先通过 `upload_url` 获 Key）
 4. 检查账号发布能力（见下表：平台与支持的发布类型）
-5. 组装表单调用对应发布接口（`publish-video` / `publish-image-text` / `publish-article`）
+5. 组装表单调用对应发布接口（`publish_video` / `publish_image_text` / `publish_article`）
 
-## account-overviews 参数
+## account_overviews 参数
 
 - `platform`（必填，平台中文名）
 - `page` / `size`
 - `name` / `group`
 - `loginStatus`（默认 1）
 
-## content-overviews 参数
+## content_overviews 参数
 
 - `platformAccountId` / `publishUserId`
 - `platform`（平台中文名）
@@ -86,7 +86,7 @@ npm run build
 
 本地素材：
 
-1. 先调用 `upload-url` 获取 key
+1. 先调用 `upload_url` 获取 key
 2. 使用 key 进行发布
 
 ```json
@@ -117,7 +117,7 @@ npm run build
 | `title` | 标题 | 是 | 最大 50 字 |
 | `description` | 描述 | 是 | 最大 2000 字 |
 | `platforms` | 发布平台数组 | 是 | 例如 `["抖音", "小红书"]` |
-| `platformAccountId` | 平台账号 ID | 是 | 来自 `list-accounts` 的 `id` |
+| `platformAccountId` | 平台账号 ID | 是 | 来自 `list_accounts` 的 `id` |
 | `publishType` | 内容类型 | 是 | `article` / `imageText` / `video` |
 | `clientId` | 客户端 ID | **云发布：否** | 云发布传 `null`，本机发布传设备 ID |
 | `coverKey` | 封面 OSS Key | 否 | 与 `coverPath` 二选一 |

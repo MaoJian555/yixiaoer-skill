@@ -61,8 +61,8 @@
     },
     "features": [
       "unified-entry",
-      "multi-platform-publish",
-      "batch-publish",
+      "multi_platform_publish",
+      "batch_publish",
       "scheduled-publish",
       "draft-save",
       "account-management",
@@ -88,52 +88,52 @@
   },
   "tools": [
     {
-      "name": "publish-video",
+      "name": "publish_video",
       "category": "publish",
       "description": "发布视频到指定平台。支持抖音、快手、小红书、视频号、B站等28+平台。【优化】支持 videoKey/coverKey 参数直接使用已上传资源，未提供封面时自动从视频提取。"
     },
     {
-      "name": "publish-image-text",
+      "name": "publish_image_text",
       "category": "publish",
       "description": "发布图文内容到指定平台。支持抖音、快手、小红书、视频号、微博等9个平台。"
     },
     {
-      "name": "publish-article",
+      "name": "publish_article",
       "category": "publish",
       "description": "发布文章到指定平台。支持微信公众号、百家号、头条号、知乎、微博等20+平台。"
     },
     {
-      "name": "multi-platform-publish",
+      "name": "multi_platform_publish",
       "category": "publish",
       "description": "一键发布到多个平台。"
     },
     {
-      "name": "batch-publish",
+      "name": "batch_publish",
       "category": "publish",
       "description": "批量发布内容到多个平台。"
     },
     {
-      "name": "list-accounts",
+      "name": "list_accounts",
       "category": "account",
       "description": "获取账号列表。"
     },
     {
-      "name": "account-overviews",
+      "name": "account_overviews",
       "category": "account",
       "description": "获取账号数据概览。"
     },
     {
-      "name": "content-overviews",
+      "name": "content_overviews",
       "category": "data",
       "description": "查询已发布作品的数据。"
     },
     {
-      "name": "get-publish-preset",
+      "name": "get_publish_preset",
       "category": "helper",
       "description": "获取平台发布预设。"
     },
     {
-      "name": "validate-form",
+      "name": "validate_form",
       "category": "helper",
       "description": "验证发布表单。"
     }

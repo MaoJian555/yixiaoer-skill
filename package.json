@@ -3,9 +3,11 @@
   "version": "1.2.0",
   "description": "蚁小二多平台内容发布 OpenClaw 插件 - 支持抖音、小红书、B站、快手、视频号等40+平台一键发布",
   "openclaw": {
-    "type": "skill",
+    "type": "plugin",
     "id": "openclaw-yixiaoer",
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./dist/index.js"
+    ]
   },
   "type": "module",
   "main": "dist/index.js",
@@ -74,10 +76,9 @@
   },
   "files": [
     "dist",
-    "manifest.json",
     "openclaw.plugin.json",
-    "SKILL.md",
-    "PLATFORM_FORMS.md",
-    "docs/platforms"
+    "skills",
+    "README.md",
+    "llms.txt"
   ]
 }
