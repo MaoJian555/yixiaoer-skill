@@ -15,17 +15,6 @@
       "apiKey": {
         "type": "string",
         "description": "蚁小二 API Key（必填，从蚁小二后台获取）"
-      },
-      "baseUrl": {
-        "type": "string",
-        "description": "自定义 API 域名（可选，默认为 https://www.yixiaoer.cn/api）"
-      },
-      "platformAccounts": {
-        "type": "object",
-        "description": "平台账号映射（可选，用于自动匹配账号）",
-        "additionalProperties": {
-          "type": "string"
-        }
       }
     }
   },
@@ -35,15 +24,6 @@
       "sensitive": true,
       "placeholder": "从蚁小二后台获取",
       "help": "在蚁小二开放平台获取 API Key"
-    },
-    "baseUrl": {
-      "label": "自定义 API 域名",
-      "placeholder": "https://www.yixiaoer.cn/api",
-      "help": "默认为官方域名，可改为测试环境域名（如 https://www-test.yixiaoer.cn/api）"
-    },
-    "platformAccounts": {
-      "label": "平台账号映射",
-      "help": "可选。用于按平台名称预设默认账号映射。"
     }
   }
 }

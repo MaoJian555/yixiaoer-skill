@@ -1,7 +1,6 @@
-import { Type } from "@sinclair/typebox";
-import { YixiaoerService } from "./services/yixiaoer.service.js";
 import { loadToolsFromMarkdown, schemaToTypebox } from "./tools/index.js";
 import type { SkillResult } from "../types.d.ts";
+import type { YixiaoerService } from "./services/yixiaoer.service.js";
 
 interface PluginAPI {
   registerTool: (tool: {
@@ -31,16 +30,51 @@ const executeMethodMap: Record<string, (service: YixiaoerService, params: any) =
   "service.batchPublish(params)": (service, params) => service.batchPublish(params),
 };
 
-const yixiaoerPlugin = {
+interface PluginConfig {
+  apiKey?: string;
+  platformAccounts?: Record<string, string>;
+}
+
+interface YixiaoerPlugin {
+  id: string;
+  name: string;
+  description: string;
+  kind?: "channel" | "provider" | "tool" | "service" | "memory";
+  configSchema?: {
+    type: string;
+    properties?: Record<string, unknown>;
+    required?: string[];
+  };
+  uiHints?: Record<string, { label: string; sensitive?: boolean; placeholder?: string; help?: string }>;
+  register: (api: PluginAPI) => Promise<void>;
+}
+
+function definePluginEntry(plugin: YixiaoerPlugin): YixiaoerPlugin {
+  return plugin;
+}
+
+const yixiaoerPlugin = definePluginEntry({
   id: "openclaw-yixiaoer",
   name: "蚁小二多平台发布",
   description: "蚁小二自媒体多平台发布插件。集成40+主流平台内容一键发布、账号管理、数据监控。支持视频、图文、文章三种内容类型的批量同步发布。",
-  kind: "tool" as const,
+  kind: "tool",
 
-  configSchema: Type.Object({
-    apiKey: Type.String({ minLength: 1 }),
-    platformAccounts: Type.Optional(Type.Record(Type.String(), Type.String()))
-  }),
+  configSchema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["apiKey"],
+    properties: {
+      apiKey: {
+        type: "string",
+        description: "蚁小二 API Key（必填，从蚁小二后台获取）"
+      },
+      platformAccounts: {
+        type: "object",
+        description: "平台账号映射",
+        additionalProperties: { type: "string" }
+      }
+    }
+  },
   uiHints: {
     apiKey: {
       label: "蚁小二 API Key",
@@ -51,11 +85,12 @@ const yixiaoerPlugin = {
   },
 
   async register(api: PluginAPI) {
+    const { YixiaoerService } = await import("./services/yixiaoer.service.js");
     const service = YixiaoerService.getInstance();
-    const pluginConfig = await api.pluginConfig;
+    const pluginConfig = await api.pluginConfig as PluginConfig | undefined;
 
     if (pluginConfig?.apiKey) {
-      const client = await import("./api/client.js");
+      const { client } = await import("./api/client.js");
       client.setApiKey(pluginConfig.apiKey);
     }
 
@@ -83,7 +118,7 @@ const yixiaoerPlugin = {
       api.logger.info("✅ 蚁小二多平台发布 Skill 已就绪");
     }
   }
-};
+});
 
 export default yixiaoerPlugin;
 
