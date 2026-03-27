@@ -36,7 +36,7 @@ export function registerOpenClawTools(api: OpenClawPluginAPI): void {
   }
 
   api.logger?.info?.(
-    "✅ 技能内发布工具已按 optional 方式注册：upload -> create/update draft -> requirements -> answers -> preview -> publish",
+    "✅ 技能内工具已按 optional 方式注册：categories -> upload -> create/update draft -> requirements -> answers -> preview -> publish",
   );
 }
 

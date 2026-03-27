@@ -132,7 +132,8 @@ const draftContentProperties: Record<string, JsonSchema> = {
   platformAccountIds: {
     type: "object",
     additionalProperties: true,
-    description: "按平台指定账号 ID 的映射，例如 { '微博': '123456' }",
+    description:
+      "按平台显式指定账号 ID 的映射，例如 { '微博': '123456', '小红书': ['acc-1', 'acc-2'] }；值既可为单个账号 ID，也可为账号 ID 数组；当前不会自动查询账号列表",
   },
   publishChannel: {
     type: "string",
@@ -149,7 +150,7 @@ export const createDraftSchema: JsonSchema = {
   type: "object",
   additionalProperties: false,
   properties: draftContentProperties,
-  required: ["body", "platforms"],
+  required: ["body", "platforms", "platformAccountIds"],
 };
 
 export const updateDraftSchema: JsonSchema = {
@@ -187,7 +188,8 @@ export const answerDraftSchema: JsonSchema = {
     },
     answers: {
       type: "object",
-      description: "按平台填写的字段回答，例如 { '抖音': { category: [...] } }",
+      description:
+        "按目标填写的字段回答；单账号平台可继续使用平台名，若同平台存在多个账号，请使用 get_publish_requirements 返回的 targetKey 或 platformAccountId，例如 { 'DouYin:acc-1': { category: [...] } }",
       additionalProperties: {
         type: "object",
         additionalProperties: true,
@@ -208,4 +210,21 @@ export const uploadMediaSchema: JsonSchema = {
     },
   },
   required: ["media"],
+};
+
+export const platformAccountCategoriesSchema: JsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    platformAccountId: {
+      type: "string",
+      description: "蚁小二平台账号 ID",
+    },
+    publishType: {
+      type: "string",
+      enum: ["video", "imageText", "article"],
+      description: "平台发布类型",
+    },
+  },
+  required: ["platformAccountId", "publishType"],
 };

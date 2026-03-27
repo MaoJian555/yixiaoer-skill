@@ -1,4 +1,12 @@
-import type { SkillResult } from "../../types.d.ts";
+import type {
+  PlatformAccountCategoryItem,
+  SkillResult,
+} from "../../types.d.ts";
+import { getClient } from "../api/client.js";
+import {
+  buildPublishCategoryValues,
+  toCascadingCategoryItems,
+} from "../api/category-utils.js";
 import {
   createPublishDraft,
   getPublishRequirements,
@@ -14,6 +22,7 @@ import {
   answerDraftSchema,
   createDraftSchema,
   draftIdSchema,
+  platformAccountCategoriesSchema,
   updateDraftSchema,
   uploadMediaSchema,
 } from "./schemas.js";
@@ -58,10 +67,54 @@ async function uploadAll(mediaList: UniversalMediaInput[]): Promise<SkillResult>
   };
 }
 
+async function getPlatformAccountCategoriesResult(params: {
+  platformAccountId: string;
+  publishType: "video" | "imageText" | "article";
+}): Promise<SkillResult> {
+  if (!params.platformAccountId.trim()) {
+    return {
+      success: false,
+      message: "platformAccountId 不能为空",
+    };
+  }
+
+  const categories = await getClient().getPlatformAccountCategories(
+    params.platformAccountId,
+    params.publishType,
+  );
+
+  return {
+    success: true,
+    message:
+      categories.length > 0
+        ? `已获取 ${categories.length} 个分类选项。`
+        : `当前账号在 ${params.publishType} 类型下暂无可用分类。`,
+    data: {
+      platformAccountId: params.platformAccountId,
+      publishType: params.publishType,
+      categories,
+      cascadingCategories: toCascadingCategoryItems(categories),
+      publishCategoryValues: buildPublishCategoryValues(categories),
+    },
+  };
+}
+
 export const OPENCLAW_TOOLS: OpenClawToolDefinition[] = [
   {
+    name: "get_platform_account_categories",
+    description: "按账号和 publishType 获取平台分类选项，适合为 category 字段准备候选值。",
+    parameters: platformAccountCategoriesSchema,
+    optional: true,
+    async execute(_id, params) {
+      return getPlatformAccountCategoriesResult({
+        platformAccountId: String(params.platformAccountId || ""),
+        publishType: params.publishType as "video" | "imageText" | "article",
+      });
+    },
+  },
+  {
     name: "create_publish_draft",
-    description: "创建发布草稿。必须先调用 upload_media 上传素材，再用返回的 key 记录正文、素材、目标平台和账号选择，随后进入字段协商流程。",
+    description: "创建发布草稿。必须先调用 upload_media 上传素材，再显式传入 platformAccountIds、正文、素材和目标平台；platformAccountIds 支持单账号或同平台多账号，随后进入字段协商流程。",
     parameters: createDraftSchema,
     optional: true,
     async execute(_id, params) {
@@ -88,7 +141,7 @@ export const OPENCLAW_TOOLS: OpenClawToolDefinition[] = [
   },
   {
     name: "submit_publish_answers",
-    description: "按平台提交字段回答；只能提交 get_publish_requirements 返回的协商字段。",
+    description: "按目标账号提交字段回答；只能提交 get_publish_requirements 返回的协商字段。单账号平台可用平台名，多账号场景请使用 targetKey 或 platformAccountId。",
     parameters: answerDraftSchema,
     optional: true,
     async execute(_id, params) {

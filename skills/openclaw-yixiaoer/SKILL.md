@@ -18,6 +18,25 @@ metadata:
 
 基于蚁小二开放平台的多平台发布 Skill。当前版本只保留一套新流程，不再暴露旧的自由态发布、账号概览、表单直传等工具。
 
+## 当前执行结构
+
+当前实现遵循下面这条链路：
+
+```text
+Skill 约束模型如何用插件
+  -> Plugin 向 OpenClaw 注册一组 draft-based tools
+  -> tools 调用内部 publish 编排层
+  -> 编排层再调用蚁小二 API
+```
+
+职责边界：
+
+- `Skill` 负责约束模型按协议使用工具，不参与运行时注册
+- `Plugin` 负责读取配置并注册工具到 OpenClaw
+- `src/openclaw-tools/` 是对外工具边界
+- `src/publish/` 是内部 publish 编排层
+- `src/api/` 负责蚁小二接口调用
+
 ## 当前工具
 
 - `upload_media`
@@ -71,7 +90,7 @@ yixiaoer-skill/
 
 - 运行时工具注册以 `src/openclaw-tools/index.ts` 为准
 - 平台字段真源以 `src/config/platform-form-schema.ts` 为准
-- 草稿流程实现集中在 `src/publish/`
+- 草稿流程实现与底层表单物化集中在 `src/publish/`
 - 参数 schema 转换集中在 `src/schema/`
 - `src/openclaw-tools/` 内部已拆为 `api.ts`、`schemas.ts`、`tool-definitions.ts`、`index.ts`
 - `tools.md` 只作为 Prompt 参考，不参与运行时注册

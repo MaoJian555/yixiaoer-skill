@@ -15,6 +15,30 @@ function dedupe(items: string[]): string[] {
   return Array.from(new Set(items));
 }
 
+function hasProvidedValue(value: unknown): boolean {
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
+  if (typeof value === "boolean") {
+    return true;
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.keys(value as Record<string, unknown>).length > 0;
+  }
+
+  return false;
+}
+
 export function inferPublishType(input: PublishDraftInput): PublishType {
   if (input.publishType) {
     return input.publishType;
@@ -115,27 +139,15 @@ export function collectProvidedFields(
   publishType: PublishType,
   contentPublishForm: Record<string, unknown>,
 ): Set<string> {
-  const fields = new Set<string>();
+  const fields = new Set<string>(
+    Object.entries(contentPublishForm)
+      .filter(([key, value]) => key !== "formType" && hasProvidedValue(value))
+      .map(([key]) => key),
+  );
   const video = getVideoMedia(input.media);
   const images = getContentImages(input.media);
   const cover = getCoverMedia(input.media);
   const verticalCover = getVerticalCoverMedia(input.media);
-
-  if (typeof contentPublishForm.title === "string" && contentPublishForm.title) {
-    fields.add("title");
-  }
-
-  if (typeof contentPublishForm.description === "string" && contentPublishForm.description) {
-    fields.add("description");
-  }
-
-  if (typeof contentPublishForm.content === "string" && contentPublishForm.content) {
-    fields.add("content");
-  }
-
-  if (Array.isArray(contentPublishForm.tags) && contentPublishForm.tags.length > 0) {
-    fields.add("tags");
-  }
 
   if (video) {
     fields.add("video");
@@ -156,10 +168,6 @@ export function collectProvidedFields(
 
   if (verticalCover) {
     fields.add("verticalCovers");
-  }
-
-  if (input.scheduleAt) {
-    fields.add("scheduledTime");
   }
 
   return fields;
@@ -191,15 +199,16 @@ export function validateFieldAnswer(
   value: unknown,
 ): string[] {
   const errors: string[] = [];
+  const targetLabel = `${field.platform} / ${field.accountName}`;
 
   if (field.availability !== "ready") {
-    errors.push(field.limitation || `${field.platform} 的字段 ${field.name} 当前不可直接填写`);
+    errors.push(field.limitation || `${targetLabel} 的字段 ${field.name} 当前不可直接填写`);
     return errors;
   }
 
   if (!isValueTypeMatch(value, field.valueType)) {
     errors.push(
-      `${field.platform} 的字段 ${field.name} 需要 ${field.valueType} 类型，当前收到 ${Array.isArray(value) ? "array" : typeof value}`,
+      `${targetLabel} 的字段 ${field.name} 需要 ${field.valueType} 类型，当前收到 ${Array.isArray(value) ? "array" : typeof value}`,
     );
   }
 
@@ -207,7 +216,7 @@ export function validateFieldAnswer(
     const allowed = new Set(field.enumValues.map((item) => item.value));
     if (!allowed.has(value)) {
       errors.push(
-        `${field.platform} 的字段 ${field.name} 只接受以下值: ${field.enumValues
+        `${targetLabel} 的字段 ${field.name} 只接受以下值: ${field.enumValues
           .map((item) => `${item.label}(${String(item.value)})`)
           .join("、")}`,
       );

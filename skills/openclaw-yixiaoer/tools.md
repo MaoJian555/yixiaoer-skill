@@ -10,10 +10,21 @@
 
 当前仓库职责分层：
 
+- `skills/openclaw-yixiaoer/` 负责提示模型如何理解和使用插件
 - `src/openclaw-tools/` 负责对外工具注册
   其中 `schemas.ts` 定义参数结构，`tool-definitions.ts` 定义工具清单，`index.ts` 负责注册
-- `src/publish/` 负责草稿、校验、预览与发布执行
+- `src/publish/` 负责内部 publish 编排，包括草稿、校验、预览与发布执行
 - `src/schema/` 负责把 JSON Schema 转成 TypeBox 参数定义
+- `src/api/` 负责调用蚁小二 API
+
+对应的真实调用链是：
+
+```text
+Skill 约束模型如何用插件
+  -> Plugin 向 OpenClaw 注册一组 draft-based tools
+  -> tools 调用内部 publish 编排层
+  -> 编排层再调用蚁小二 API
+```
 
 ---
 
@@ -27,6 +38,20 @@
 6. `publish_draft`
 
 如果草稿内容、素材、目标平台或账号选择变化，可在第 2 步之后调用 `update_publish_draft`，然后重新获取 requirements。
+
+---
+
+## 辅助只读工具
+
+### `get_platform_account_categories`
+
+按账号和 `publishType` 获取分类选项。
+
+- 输入 `platformAccountId`
+- 输入 `publishType`，只支持 `video` / `imageText` / `article`
+- 返回原始分类列表
+- 同时返回适合 `CascadingPlatformDataItem[]` 的简化结构，方便直接给 `category` 字段使用
+- 如果分类存在二级结构，会额外生成可直接提交的扁平路径数组，例如 `[父分类, 子分类]`
 
 ---
 
@@ -53,6 +78,7 @@
 - `scheduleAt`
 - `platforms[]`
 - `platformAccountIds`
+  当前为必填。项目不会自动查询账号列表，必须由调用方显式传入每个平台的账号 ID。
 - `publishType`
 - `publishChannel`
 - `clientId`
@@ -62,8 +88,9 @@
 读取每个平台仍需补齐的字段、可用预设、受限字段和阻塞项。
 
 - 平台静态字段来自统一 schema
-- `category` / `topics` 等尽量走账号预设
+- `category` 优先走账号分类接口，`topics` 等尽量走账号预设
 - `location` 等未接入能力会明确标成限制，而不是让调用方猜对象结构
+- `group`、`groupShopping` 等分组字段当前没有接口支持，只会返回限制说明
 
 ### `submit_publish_answers`
 
@@ -86,7 +113,7 @@
 在预览通过且用户确认后正式发布。
 
 - 只接受已完成校验的草稿
-- 发布参数由代码层从草稿物化
+- 发布参数由代码层从草稿内部物化
 - 调用方不应手写底层 `contentPublishForm`
 
 ---

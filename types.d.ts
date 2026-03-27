@@ -235,6 +235,22 @@ export interface CascadingPlatformDataItem<TRaw = unknown> {
   raw: TRaw;
 }
 
+/** 账号分类原始对象 */
+export interface PlatformAccountCategoryRaw {
+  id: string;
+  name: string;
+  [property: string]: any;
+}
+
+/** 账号分类项 */
+export interface PlatformAccountCategoryItem {
+  raw: PlatformAccountCategoryRaw;
+  yixiaoerId: string;
+  yixiaoerName: string;
+  child?: PlatformAccountCategoryItem[];
+  [property: string]: any;
+}
+
 /** 分类 */
 export interface Category {
   yixiaoerId: string;

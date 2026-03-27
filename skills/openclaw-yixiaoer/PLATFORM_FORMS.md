@@ -1,6 +1,21 @@
 # 蚁小二全平台分发字段百科 (contentPublishForm)
 
-在调用发布技能时，AI 必须根据 `platformAccountId` 对应的平台，参照下表填充 `contentPublishForm`。
+本文档用于说明内部 `contentPublishForm` 物化时会涉及的平台字段形态，便于理解 requirements / answers 背后的平台能力。
+
+当前实现的真实调用链是：
+
+```text
+Skill 约束模型如何用插件
+  -> Plugin 向 OpenClaw 注册一组 draft-based tools
+  -> tools 调用内部 publish 编排层
+  -> 编排层再调用蚁小二 API
+```
+
+因此：
+
+- OpenClaw 对外调用方不应直接手写 `contentPublishForm`
+- 模型应优先走 `upload_media -> create/update draft -> requirements -> answers -> preview -> publish`
+- 本文档主要作为内部字段参考，而不是对外工具契约
 
 ## 1. 视频发布 (Video Forms)
 
@@ -82,11 +97,11 @@
 1.  **图片/封面对象 (`Cover/OldCover`)**:
     包含 `width`, `height`, `size`, `key`, `path` (或 `pathOrUrl`)。
 2.  **分类对象 (`Category`)**:
-    包含 `yixiaoerId`, `yixiaoerName` 等。推荐使用 `get-publish-preset` 获取后整体填入。
+    包含 `yixiaoerId`, `yixiaoerName` 等。推荐优先使用 `get_platform_account_categories` 获取后整体填入；若分类带二级结构，发布字段应传扁平数组，例如 `[父分类, 子分类]`。
 3.  **定时发布 (`scheduledTime`)**:
     Unix 时间戳（秒或毫秒，根据文档示例通常为 10 位或 13 位，视具体平台而定）。
 4.  **申明/类型 (`declaration/type/pubType`)**:
     数值枚举，详见文档或预设接口。
 
 ---
-**注意**：AI 应先调用 `get-publish-preset` 获取分类。若接口未返回，则参考本手册组装表单。
+**注意**：模型应优先通过 `get_publish_requirements` 理解当前草稿缺失字段，再结合 `get_platform_account_categories` 和账号预设结果补齐答案，而不是直接按本手册手写整份 `contentPublishForm`。

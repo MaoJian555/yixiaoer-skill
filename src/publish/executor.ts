@@ -43,6 +43,7 @@ function buildPlatformForms(
 } {
   const platformNames: string[] = [];
   const platformForms: Record<string, { formType: "task" }> = {};
+  const seenPlatformNames = new Set<string>();
 
   for (const target of targets) {
     const rule = PLATFORM_RULES[target.platformCode];
@@ -55,7 +56,10 @@ function buildPlatformForms(
       throw new Error(`${target.platformName} 参数验证失败: ${validation.errors.join("; ")}`);
     }
 
-    platformNames.push(target.platformName);
+    if (!seenPlatformNames.has(target.platformName)) {
+      seenPlatformNames.add(target.platformName);
+      platformNames.push(target.platformName);
+    }
     platformForms[target.platformName] = { formType: "task" };
   }
 

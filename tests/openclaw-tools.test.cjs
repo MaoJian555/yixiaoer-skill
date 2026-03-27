@@ -81,7 +81,7 @@ describe("OpenClaw tool registration", () => {
     }
   });
 
-  test("registers only the draft workflow tools", async () => {
+  test("registers the draft workflow tools and category lookup", async () => {
     const registered = [];
     const logMessages = [];
 
@@ -97,6 +97,7 @@ describe("OpenClaw tool registration", () => {
     });
 
     expect(registered.map((tool) => tool.name)).toEqual([
+      "get_platform_account_categories",
       "create_publish_draft",
       "update_publish_draft",
       "get_publish_requirements",
@@ -110,6 +111,6 @@ describe("OpenClaw tool registration", () => {
     expect(registered.some((tool) => tool.name === "multi_platform_publish")).toBe(false);
     expect(registered.every((tool) => typeof tool.execute === "function")).toBe(true);
     expect(registered.every((tool) => tool.optional)).toBe(true);
-    expect(logMessages[0]).toContain("optional");
+    expect(logMessages[0]).toContain("categories");
   });
 });

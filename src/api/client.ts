@@ -1,8 +1,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import type {
+  PlatformAccountCategoryItem,
   YixiaoerConfig,
   ApiResponse,
-  MediaAccount,
   TeamInfo,
 } from "../../types.d.ts";
 
@@ -82,28 +82,24 @@ export class YixiaoerClient {
     return this.request("GET", "/teams");
   }
 
-  async getAccounts(params?: {
-    page?: number;
-    size?: number;
-    loginStatus?: number;
-  }): Promise<{
-    data: MediaAccount[];
-    totalSize: number;
-    page: number;
-    size: number;
-  }> {
-    return this.request(
-      "GET",
-      "/platform-accounts",
-      params || { page: 1, size: 20 },
-    );
-  }
-
   async getPublishPreset(platformAccountId: string): Promise<any> {
     return this.request(
       "GET",
       `/v2/platform/accounts/${platformAccountId}/publish-preset`,
     );
+  }
+
+  async getPlatformAccountCategories(
+    platformAccountId: string,
+    publishType: "video" | "imageText" | "article",
+  ): Promise<PlatformAccountCategoryItem[]> {
+    const result = await this.request<{ dataList?: PlatformAccountCategoryItem[] }>(
+      "GET",
+      `/platform-accounts/${platformAccountId}/categories`,
+      { publishType },
+    );
+
+    return Array.isArray(result?.dataList) ? result.dataList : [];
   }
 
   async publishTask(taskData: any): Promise<any> {
@@ -145,7 +141,7 @@ export function getClient(): YixiaoerClient {
 
 export function createClient(baseUrl?: string): YixiaoerClient {
   const config: YixiaoerConfig = {
-    baseUrl: baseUrl || "https://www.yixiaoer.cn/api",
+    baseUrl: baseUrl || "https://www-test.yixiaoer.cn/api",
   };
   clientInstance = new YixiaoerClient(config);
   return clientInstance;

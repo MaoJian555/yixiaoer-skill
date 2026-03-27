@@ -103,7 +103,68 @@ describe("publish draft workflow", () => {
     expect(created.message).toContain("url");
   });
 
-  test("creates a draft and exposes preset-backed requirements", async () => {
+  test("requires explicit platformAccountIds when account listing is unavailable", async () => {
+    const created = await drafts.createPublishDraft({
+      title: "简书文章",
+      body: "这是一个文章草稿",
+      platforms: ["简书"],
+      media: [
+        { kind: "image", role: "cover", key: "cover-key", width: 1080, height: 1920, size: 256 },
+      ],
+    });
+
+    expect(created.success).toBe(false);
+    expect(created.message).toContain("platformAccountId");
+    expect(created.message).toContain("账号列表查询接口");
+  });
+
+  test("uses explicit platformAccountIds without querying account list", async () => {
+    const created = await drafts.createPublishDraft({
+      title: "简书文章",
+      body: "这是一个文章草稿",
+      platforms: ["简书"],
+      platformAccountIds: {
+        简书: "account-42",
+      },
+      media: [
+        { kind: "image", role: "cover", key: "cover-key", width: 1080, height: 1920, size: 256 },
+      ],
+    });
+
+    expect(created.success).toBe(true);
+    expect(created.data.targets).toEqual([
+      expect.objectContaining({
+        platformCode: "JianShu",
+        targetKey: "JianShu:account-42",
+        platformAccountId: "account-42",
+        platformAccountName: "account-42",
+      }),
+    ]);
+  });
+
+  test("expands array-based platformAccountIds into multiple targets across same and different platforms", async () => {
+    const created = await drafts.createPublishDraft({
+      title: "多账号文章",
+      body: "这是一个多账号文章草稿",
+      platforms: ["简书", "微博"],
+      platformAccountIds: {
+        简书: ["account-1", "account-2"],
+        微博: "weibo-1",
+      },
+      media: [
+        { kind: "image", role: "cover", key: "cover-key", width: 1080, height: 1920, size: 256 },
+      ],
+    });
+
+    expect(created.success).toBe(true);
+    expect(created.data.targets.map((target) => target.targetKey)).toEqual([
+      "JianShu:account-1",
+      "JianShu:account-2",
+      "XinLangWeiBo:weibo-1",
+    ]);
+  });
+
+  test("creates a draft and exposes account-backed category requirements", async () => {
     drafts.__setDraftTestDependencies({
       resolvePlatformAccounts: async () => ({
         targets: [
@@ -118,8 +179,10 @@ describe("publish draft workflow", () => {
         blockers: [],
         warnings: [],
       }),
+      getPlatformAccountCategories: async () => [
+        { yixiaoerId: "1", yixiaoerName: "游戏", raw: { id: "1", name: "游戏" } },
+      ],
       getPublishPreset: async () => ({
-        videoCategory: [{ yixiaoerId: "1", yixiaoerName: "游戏" }],
         videoTopics: [{ yixiaoerId: "2", yixiaoerName: "攻略" }],
       }),
     });
@@ -142,6 +205,103 @@ describe("publish draft workflow", () => {
     const acfun = requirements.data.requirements[0];
     expect(acfun.platformCode).toBe("AcFun");
     expect(acfun.fields.some((field) => field.name === "category" && field.source === "preset")).toBe(true);
+    expect(acfun.fields.find((field) => field.name === "category").options).toEqual([
+      [{ yixiaoerId: "1", yixiaoerName: "游戏", raw: { id: "1", name: "游戏" } }],
+    ]);
+  });
+
+  test("flattens nested category trees into publish-ready category arrays", async () => {
+    drafts.__setDraftTestDependencies({
+      resolvePlatformAccounts: async () => ({
+        targets: [
+          {
+            platformInput: "AcFun",
+            platformCode: "AcFun",
+            platformName: "AcFun",
+            platformAccountId: "acc-1",
+            platformAccountName: "主账号",
+          },
+        ],
+        blockers: [],
+        warnings: [],
+      }),
+      getPlatformAccountCategories: async () => [
+        {
+          yixiaoerId: "parent-1",
+          yixiaoerName: "游戏",
+          raw: "parent-raw",
+          child: [
+            {
+              yixiaoerId: "child-1",
+              yixiaoerName: "单机游戏",
+              raw: "child-raw",
+            },
+          ],
+        },
+      ],
+      getPublishPreset: async () => ({
+        videoTopics: [],
+      }),
+    });
+
+    const created = await drafts.createPublishDraft({
+      body: "这是一个视频草稿",
+      platforms: ["AcFun"],
+      media: [
+        { kind: "video", key: "video-key", duration: 12, width: 1080, height: 1920, size: 1024 },
+        { kind: "image", role: "cover", key: "cover-key", width: 1080, height: 1920, size: 256 },
+      ],
+    });
+
+    const requirements = await drafts.getPublishRequirements({ draftId: created.data.id });
+    const categoryField = requirements.data.requirements[0].fields.find((field) => field.name === "category");
+
+    expect(categoryField.options).toEqual([
+      [
+        { yixiaoerId: "parent-1", yixiaoerName: "游戏", raw: "parent-raw" },
+        { yixiaoerId: "child-1", yixiaoerName: "单机游戏", raw: "child-raw" },
+      ],
+    ]);
+  });
+
+  test("does not expose required fields that the content form already auto-populates", async () => {
+    drafts.__setDraftTestDependencies({
+      resolvePlatformAccounts: async () => ({
+        targets: [
+          {
+            platformInput: "百家号",
+            platformCode: "BaiJiaHao",
+            platformName: "百家号",
+            platformAccountId: "acc-1",
+            platformAccountName: "主账号",
+          },
+        ],
+        blockers: [],
+        warnings: [],
+      }),
+      getPublishPreset: async () => ({
+        videoCategory: [],
+        videoTopics: [],
+      }),
+      getPlatformAccountCategories: async () => [],
+    });
+
+    const created = await drafts.createPublishDraft({
+      body: "这是一个视频草稿",
+      platforms: ["百家号"],
+      media: [
+        { kind: "video", key: "video-key", duration: 12, width: 1080, height: 1920, size: 1024 },
+        { kind: "image", role: "cover", key: "cover-key", width: 1080, height: 1920, size: 256 },
+      ],
+    });
+
+    expect(created.success).toBe(true);
+
+    const requirements = await drafts.getPublishRequirements({ draftId: created.data.id });
+    const baiJiaHao = requirements.data.requirements[0];
+
+    expect(baiJiaHao.platformCode).toBe("BaiJiaHao");
+    expect(baiJiaHao.fields.some((field) => field.name === "declaration")).toBe(false);
   });
 
   test("rejects invalid answers and preview reports blockers", async () => {
@@ -160,9 +320,11 @@ describe("publish draft workflow", () => {
         warnings: [],
       }),
       getPublishPreset: async () => ({
-        videoCategory: [{ yixiaoerId: "1", yixiaoerName: "游戏" }],
         videoTopics: [],
       }),
+      getPlatformAccountCategories: async () => [
+        { yixiaoerId: "1", yixiaoerName: "游戏", raw: { id: "1", name: "游戏" } },
+      ],
     });
 
     const created = await drafts.createPublishDraft({
@@ -212,6 +374,7 @@ describe("publish draft workflow", () => {
         videoCategory: null,
         videoTopics: null,
       }),
+      getPlatformAccountCategories: async () => [],
     });
 
     const created = await drafts.createPublishDraft({
@@ -232,6 +395,45 @@ describe("publish draft workflow", () => {
     expect(locationField.limitation).toContain("未接入");
   });
 
+  test("marks group fields as unsupported when group APIs are unavailable", async () => {
+    drafts.__setDraftTestDependencies({
+      resolvePlatformAccounts: async () => ({
+        targets: [
+          {
+            platformInput: "小红书",
+            platformCode: "XiaoHongShu",
+            platformName: "小红书",
+            platformAccountId: "acc-3",
+            platformAccountName: "小红书号",
+          },
+        ],
+        blockers: [],
+        warnings: [],
+      }),
+      getPublishPreset: async () => ({
+        videoTopics: null,
+      }),
+      getPlatformAccountCategories: async () => [],
+    });
+
+    const created = await drafts.createPublishDraft({
+      body: "小红书视频草稿",
+      platforms: ["小红书"],
+      media: [
+        { kind: "video", key: "video-key", duration: 12, width: 1080, height: 1920, size: 1024 },
+        { kind: "image", role: "cover", key: "cover-key", width: 1080, height: 1920, size: 256 },
+      ],
+    });
+
+    const requirements = await drafts.getPublishRequirements({ draftId: created.data.id });
+    const xiaohongshu = requirements.data.requirements[0];
+    const groupField = xiaohongshu.fields.find((field) => field.name === "group");
+
+    expect(groupField).toBeTruthy();
+    expect(groupField.availability).toBe("unsupported");
+    expect(groupField.limitation).toContain("分组接口");
+  });
+
   test("publishes a validated draft through internal materialization", async () => {
     const publishCalls = [];
 
@@ -250,9 +452,11 @@ describe("publish draft workflow", () => {
         warnings: [],
       }),
       getPublishPreset: async () => ({
-        videoCategory: [{ yixiaoerId: "1", yixiaoerName: "游戏" }],
         videoTopics: [],
       }),
+      getPlatformAccountCategories: async () => [
+        { yixiaoerId: "1", yixiaoerName: "游戏", raw: { id: "1", name: "游戏" } },
+      ],
       submitPublishTask: async (payload) => {
         publishCalls.push(payload);
         return {
@@ -309,6 +513,129 @@ describe("publish draft workflow", () => {
     expect(publishCalls[0].accountForms[0].coverKey).toBe("cover-key");
   });
 
+  test("supports multiple accounts on the same platform with target-scoped answers", async () => {
+    const publishCalls = [];
+
+    drafts.__setDraftTestDependencies({
+      resolvePlatformAccounts: async () => ({
+        targets: [
+          {
+            targetKey: "AcFun:acc-1",
+            platformInput: "AcFun",
+            platformCode: "AcFun",
+            platformName: "AcFun",
+            platformAccountId: "acc-1",
+            platformAccountName: "主账号",
+          },
+          {
+            targetKey: "AcFun:acc-2",
+            platformInput: "AcFun",
+            platformCode: "AcFun",
+            platformName: "AcFun",
+            platformAccountId: "acc-2",
+            platformAccountName: "副账号",
+          },
+        ],
+        blockers: [],
+        warnings: [],
+      }),
+      getPublishPreset: async () => ({
+        videoTopics: [],
+      }),
+      getPlatformAccountCategories: async () => [
+        { yixiaoerId: "1", yixiaoerName: "游戏", raw: { id: "1", name: "游戏" } },
+        { yixiaoerId: "2", yixiaoerName: "生活", raw: { id: "2", name: "生活" } },
+      ],
+      submitPublishTask: async (payload) => {
+        publishCalls.push(payload);
+        return {
+          success: true,
+          message: "mock publish ok",
+          data: { taskId: "task-multi-1" },
+        };
+      },
+      toVideoPublishAsset: async () => ({
+        key: "video-key",
+        duration: 12,
+        width: 1080,
+        height: 1920,
+        size: 1024,
+      }),
+      toImagePublishAsset: async () => ({
+        key: "cover-key",
+        width: 1080,
+        height: 1920,
+        size: 256,
+      }),
+    });
+
+    const created = await drafts.createPublishDraft({
+      body: "这是一个同平台多账号视频草稿",
+      platforms: ["AcFun"],
+      media: [
+        { kind: "video", key: "video-key", duration: 12, width: 1080, height: 1920, size: 1024 },
+        { kind: "image", role: "cover", key: "cover-key", width: 1080, height: 1920, size: 256 },
+      ],
+    });
+
+    expect(created.success).toBe(true);
+
+    const requirements = await drafts.getPublishRequirements({ draftId: created.data.id });
+    expect(requirements.success).toBe(true);
+    expect(requirements.data.requirements.map((item) => item.targetKey)).toEqual([
+      "AcFun:acc-1",
+      "AcFun:acc-2",
+    ]);
+
+    const ambiguous = await drafts.submitPublishAnswers({
+      draftId: created.data.id,
+      answers: {
+        AcFun: {
+          category: [{ yixiaoerId: "1", yixiaoerName: "游戏" }],
+          type: 0,
+        },
+      },
+    });
+
+    expect(ambiguous.success).toBe(false);
+    expect(ambiguous.message).toContain("多个账号");
+
+    const answered = await drafts.submitPublishAnswers({
+      draftId: created.data.id,
+      answers: {
+        "AcFun:acc-1": {
+          category: [{ yixiaoerId: "1", yixiaoerName: "游戏" }],
+          type: 0,
+        },
+        "acc-2": {
+          category: [{ yixiaoerId: "2", yixiaoerName: "生活" }],
+          type: 0,
+        },
+      },
+    });
+
+    expect(answered.success).toBe(true);
+
+    const preview = await drafts.previewPublishDraft({ draftId: created.data.id });
+    expect(preview.success).toBe(true);
+    expect(preview.message).toContain("目标键: AcFun:acc-1");
+    expect(preview.message).toContain("目标键: AcFun:acc-2");
+
+    const published = await drafts.publishDraft({ draftId: created.data.id });
+    expect(published.success).toBe(true);
+    expect(publishCalls).toHaveLength(1);
+    expect(publishCalls[0].accountForms).toHaveLength(2);
+    expect(publishCalls[0].accountForms[0].platformAccountId).toBe("acc-1");
+    expect(publishCalls[0].accountForms[1].platformAccountId).toBe("acc-2");
+    expect(publishCalls[0].accountForms[0].contentPublishForm.category).toEqual([
+      { yixiaoerId: "1", yixiaoerName: "游戏" },
+    ]);
+    expect(publishCalls[0].accountForms[1].contentPublishForm.category).toEqual([
+      { yixiaoerId: "2", yixiaoerName: "生活" },
+    ]);
+    expect(publishCalls[0].targets.map((target) => target.platformAccountId)).toEqual(["acc-1", "acc-2"]);
+  });
+
   test("does not implicitly upload or publish when draft media fall back to raw sources", async () => {
     const publishCalls = [];
     let videoConversions = 0;
@@ -328,9 +655,11 @@ describe("publish draft workflow", () => {
         warnings: [],
       }),
       getPublishPreset: async () => ({
-        videoCategory: [{ yixiaoerId: "1", yixiaoerName: "游戏" }],
         videoTopics: [],
       }),
+      getPlatformAccountCategories: async () => [
+        { yixiaoerId: "1", yixiaoerName: "游戏", raw: { id: "1", name: "游戏" } },
+      ],
       submitPublishTask: async (payload) => {
         publishCalls.push(payload);
         return {

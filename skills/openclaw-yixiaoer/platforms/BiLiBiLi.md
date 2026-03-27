@@ -2,6 +2,8 @@
 
 > 来源: `bilibili.dto.ts`
 
+> 分类获取: 优先调用 `get_platform_account_categories`，并根据发布类型传 `publishType=video` 或 `publishType=article`。若返回带二级分类，发布时请传 `[父分类, 子分类]` 这样的数组结构。
+
 ## 1. BilibiliVideoForm (视频)
 
 | 字段名 | 类型 | 必填 | 描述 |
@@ -27,4 +29,3 @@
 | `type` | number | ❌ 否 | 原创类型1:非原创或2:原创 |
 | `category` | Category[] | ❌ 否 | 分类 |
 | `scheduledTime` | number | ❌ 否 | 定时发布时间 |
-

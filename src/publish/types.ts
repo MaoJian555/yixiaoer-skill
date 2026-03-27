@@ -6,6 +6,8 @@ export type MediaRole = "content" | "cover" | "verticalCover";
 
 export type PublishChannel = "cloud" | "local";
 
+export type PlatformAccountIdInput = string | string[];
+
 export interface UniversalMediaInput {
   kind: MediaKind;
   role?: MediaRole;
@@ -27,7 +29,7 @@ export interface PublishDraftInput {
   scheduleAt?: number;
   platforms: string[];
   publishType?: PublishType;
-  platformAccountIds?: Record<string, string>;
+  platformAccountIds?: Record<string, PlatformAccountIdInput>;
   publishChannel?: PublishChannel;
   clientId?: string;
 }
@@ -41,12 +43,13 @@ export interface UpdatePublishDraftInput {
   scheduleAt?: number;
   platforms?: string[];
   publishType?: PublishType;
-  platformAccountIds?: Record<string, string>;
+  platformAccountIds?: Record<string, PlatformAccountIdInput>;
   publishChannel?: PublishChannel;
   clientId?: string;
 }
 
 export interface ResolvedPlatformAccount {
+  targetKey: string;
   platformInput: string;
   platformCode: string;
   platformName: string;
@@ -61,6 +64,7 @@ export interface PlatformTextSnapshot {
 }
 
 export interface PlatformPreviewItem {
+  targetKey: string;
   platform: string;
   platformCode: string;
   accountId: string;
@@ -84,6 +88,7 @@ export type DraftFieldSource = "static" | "preset" | "resolver";
 export type DraftFieldAvailability = "ready" | "limited" | "unsupported";
 
 export interface DraftFieldDefinition {
+  targetKey: string;
   name: string;
   platform: string;
   platformCode: string;
@@ -103,6 +108,7 @@ export interface DraftFieldDefinition {
 }
 
 export interface DraftPlatformRequirements {
+  targetKey: string;
   platform: string;
   platformCode: string;
   accountId: string;

@@ -1,5 +1,6 @@
 import type { SkillResult } from "../../types.d.ts";
 import { getClient } from "../api/client.js";
+import { buildPublishCategoryValues } from "../api/category-utils.js";
 import type { PlatformFormFieldSchema } from "../config/platform-form-schema.js";
 import { resolvePlatformAccounts as resolvePlatformAccountsInternal } from "./account-resolver.js";
 import { submitPublishTask as submitPublishTaskInternal } from "./executor.js";
@@ -46,6 +47,8 @@ let draftCounter = 0;
 const defaultDraftDependencies = {
   resolvePlatformAccounts: resolvePlatformAccountsInternal,
   getPublishPreset: (platformAccountId: string) => getClient().getPublishPreset(platformAccountId),
+  getPlatformAccountCategories: (platformAccountId: string, publishType: PublishType) =>
+    getClient().getPlatformAccountCategories(platformAccountId, publishType),
   submitPublishTask: submitPublishTaskInternal,
   toImagePublishAsset: toImagePublishAssetInternal,
   toVideoPublishAsset: toVideoPublishAssetInternal,
@@ -78,27 +81,86 @@ function formatBlockerSummary(blockers: string[], fallback: string): string {
   return blockers.length > 0 ? blockers.join("；") : fallback;
 }
 
-function summarizePresetByType(
+function formatTargetLabel(target: {
+  platformName?: string;
+  platform?: string;
+  platformAccountName?: string;
+  accountName?: string;
+}): string {
+  const platform = target.platformName || target.platform || "未知平台";
+  const account = target.platformAccountName || target.accountName || "未知账号";
+  return `${platform} / ${account}`;
+}
+
+function getTargetKey(target: {
+  targetKey?: string;
+  platformCode: string;
+  platformAccountId?: string;
+  accountId?: string;
+}): string {
+  return target.targetKey || `${target.platformCode}:${target.platformAccountId || target.accountId || "unknown"}`;
+}
+
+function addAnswerAlias(
+  lookup: Map<string, string | null>,
+  alias: string | undefined,
+  targetKey: string,
+): void {
+  const normalizedAlias = alias?.trim();
+  if (!normalizedAlias) {
+    return;
+  }
+
+  const current = lookup.get(normalizedAlias);
+  if (current === undefined) {
+    lookup.set(normalizedAlias, targetKey);
+    return;
+  }
+
+  if (current !== targetKey) {
+    lookup.set(normalizedAlias, null);
+  }
+}
+
+function buildAnswerTargetLookup(targets: ResolvedPlatformAccount[]): Map<string, string | null> {
+  const lookup = new Map<string, string | null>();
+  const platformCounts = new Map<string, number>();
+
+  for (const target of targets) {
+    platformCounts.set(target.platformCode, (platformCounts.get(target.platformCode) || 0) + 1);
+  }
+
+  for (const target of targets) {
+    const targetKey = getTargetKey(target);
+    addAnswerAlias(lookup, targetKey, targetKey);
+    addAnswerAlias(lookup, target.platformAccountId, targetKey);
+
+    if ((platformCounts.get(target.platformCode) || 0) === 1) {
+      addAnswerAlias(lookup, target.platformCode, targetKey);
+      addAnswerAlias(lookup, target.platformInput, targetKey);
+      addAnswerAlias(lookup, target.platformName, targetKey);
+    } else {
+      lookup.set(target.platformCode, null);
+      lookup.set(target.platformInput, null);
+      lookup.set(target.platformName, null);
+    }
+  }
+
+  return lookup;
+}
+
+function summarizePresetTopicsByType(
   preset: any,
   publishType: PublishType,
-): { categories: unknown; topics: unknown } {
+): unknown {
   switch (publishType) {
     case "video":
-      return {
-        categories: preset?.videoCategory ?? null,
-        topics: preset?.videoTopics ?? null,
-      };
+      return preset?.videoTopics ?? null;
     case "imageText":
-      return {
-        categories: preset?.dynamicCategory ?? null,
-        topics: preset?.dynamicTopics ?? null,
-      };
+      return preset?.dynamicTopics ?? null;
     case "article":
     default:
-      return {
-        categories: preset?.articleCategory ?? null,
-        topics: preset?.articleTopics ?? null,
-      };
+      return preset?.articleTopics ?? null;
   }
 }
 
@@ -125,12 +187,17 @@ function enumOptionsToDraftOptions(options: Array<{ value: number; label: string
 }
 
 function getUnsupportedFieldLimitation(target: ResolvedPlatformAccount, fieldName: string): string | undefined {
+  const targetLabel = formatTargetLabel(target);
   if (fieldName === "location") {
-    return `${target.platformName} 的 location 字段需要位置检索能力，当前版本还未接入，暂时不能直接填写。`;
+    return `${targetLabel} 的 location 字段需要位置检索能力，当前版本还未接入，暂时不能直接填写。`;
+  }
+
+  if (fieldName === "group" || fieldName === "groupShopping") {
+    return `${targetLabel} 的 ${fieldName} 字段需要分组接口支持，当前项目没有该接口，暂时不能直接填写。`;
   }
 
   if (isDynamicFieldName(fieldName)) {
-    return `${target.platformName} 的 ${fieldName} 字段依赖平台专属解析，当前版本还未开放直接填写。`;
+    return `${targetLabel} 的 ${fieldName} 字段依赖平台专属解析，当前版本还未开放直接填写。`;
   }
 
   return undefined;
@@ -141,30 +208,47 @@ async function buildRequirementsForTarget(
   target: ResolvedPlatformAccount,
   publishType: PublishType,
 ): Promise<DraftPlatformRequirements> {
+  const targetKey = getTargetKey(target);
+  const targetLabel = formatTargetLabel(target);
   const forms = getFormsForPublishType(target.platformCode, publishType);
   const blockers: string[] = [];
   const warnings: string[] = [];
   const { contentPublishForm } = buildPlatformContentForm(input, target, publishType);
   const providedFields = collectProvidedFields(input, publishType, contentPublishForm);
-  let presetSummary: { categories: unknown; topics: unknown } = {
-    categories: null,
-    topics: null,
-  };
+  let categoryOptions: unknown = null;
+  let topicOptions: unknown = null;
+  const unresolvedFields = dedupeFieldSchemas(forms.flatMap((form) => form.fields)).filter(
+    (field) => !providedFields.has(field.name),
+  );
+  const needsCategory = unresolvedFields.some((field) => field.name === "category");
+  const needsTopics = unresolvedFields.some((field) => field.name === "topics");
 
   try {
-    const preset = await draftDependencies.getPublishPreset(target.platformAccountId);
-    presetSummary = summarizePresetByType(preset, publishType);
+    if (needsCategory) {
+      const categories = await draftDependencies.getPlatformAccountCategories(
+        target.platformAccountId,
+        publishType,
+      );
+      categoryOptions = buildPublishCategoryValues(categories);
+    }
   } catch {
-    warnings.push(`${target.platformName} 的分类/话题预设获取失败，可填写字段将只返回静态结构。`);
+    warnings.push(`${targetLabel} 的分类接口获取失败，可填写字段将只返回静态结构。`);
+  }
+
+  try {
+    if (needsTopics) {
+      const preset = await draftDependencies.getPublishPreset(target.platformAccountId);
+      topicOptions = summarizePresetTopicsByType(preset, publishType);
+    }
+  } catch {
+    warnings.push(`${targetLabel} 的话题预设获取失败，可填写字段将只返回静态结构。`);
   }
 
   if (forms.length === 0) {
-    blockers.push(`${target.platformName} 不支持 ${publishType} 类型`);
+    blockers.push(`${targetLabel} 不支持 ${publishType} 类型`);
   }
 
-  const fields = dedupeFieldSchemas(forms.flatMap((form) => form.fields))
-    .filter((field) => !providedFields.has(field.name))
-    .map((field): DraftFieldDefinition => {
+  const fields = unresolvedFields.map((field): DraftFieldDefinition => {
       let source: DraftFieldDefinition["source"] = "static";
       let availability: DraftFieldAvailability = "ready";
       let options: unknown;
@@ -172,10 +256,13 @@ async function buildRequirementsForTarget(
 
       if (field.name === "category" || field.name === "topics") {
         source = "preset";
-        options = field.name === "category" ? presetSummary.categories : presetSummary.topics;
+        options = field.name === "category" ? categoryOptions : topicOptions;
         if (!options) {
           availability = "limited";
-          limitation = `${target.platformName} 的 ${field.name} 需要账号预设支持，当前未能获取可用选项。`;
+          limitation =
+            field.name === "category"
+              ? `${targetLabel} 的 ${field.name} 需要账号分类接口支持，当前未能获取可用选项。`
+              : `${targetLabel} 的 ${field.name} 需要账号预设支持，当前未能获取可用选项。`;
         }
       } else if (field.name === "location") {
         source = "resolver";
@@ -188,6 +275,7 @@ async function buildRequirementsForTarget(
       }
 
       return {
+        targetKey,
         name: field.name,
         platform: target.platformName,
         platformCode: target.platformCode,
@@ -209,11 +297,12 @@ async function buildRequirementsForTarget(
 
   for (const field of fields) {
     if (field.required && field.availability !== "ready") {
-      blockers.push(field.limitation || `${target.platformName} 缺少必填字段 ${field.name}`);
+      blockers.push(field.limitation || `${targetLabel} 缺少必填字段 ${field.name}`);
     }
   }
 
   return {
+    targetKey,
     platform: target.platformName,
     platformCode: target.platformCode,
     accountId: target.platformAccountId,
@@ -244,15 +333,16 @@ function validateAnswersForRequirements(
   const warnings = requirements.flatMap((item) => item.warnings);
 
   for (const requirement of requirements) {
+    const targetLabel = formatTargetLabel(requirement);
     blockers.push(...requirement.blockers);
 
-    const platformAnswers = answers[requirement.platformCode] || {};
+    const platformAnswers = answers[requirement.targetKey] || {};
     const allowedFields = new Map(requirement.fields.map((field) => [field.name, field]));
 
     for (const fieldName of Object.keys(platformAnswers)) {
       const field = allowedFields.get(fieldName);
       if (!field) {
-        const message = `${requirement.platform} 不接受字段 ${fieldName}，请只提交协商结果中声明的字段。`;
+        const message = `${targetLabel} 不接受字段 ${fieldName}，请只提交协商结果中声明的字段。`;
         issues.push({
           platform: requirement.platform,
           platformCode: requirement.platformCode,
@@ -281,7 +371,7 @@ function validateAnswersForRequirements(
       }
 
       if (!(field.name in platformAnswers)) {
-        const message = `${requirement.platform} 缺少必填字段 ${field.name}`;
+        const message = `${targetLabel} 缺少必填字段 ${field.name}`;
         issues.push({
           platform: requirement.platform,
           platformCode: requirement.platformCode,
@@ -356,14 +446,16 @@ async function buildPreviewState(record: PublishDraftRecord): Promise<DraftPrevi
   const previewItems: PlatformPreviewItem[] = [];
 
   for (const target of record.targets) {
-    const requirement = requirements.find((item) => item.platformCode === target.platformCode);
+    const targetKey = getTargetKey(target);
+    const requirement = requirements.find((item) => item.targetKey === targetKey);
     if (!requirement) {
       continue;
     }
 
-    const answers = record.answers[target.platformCode] || {};
+    const answers = record.answers[targetKey] || {};
     const { text } = buildPlatformContentForm(record.input, target, record.publishType, answers);
     previewItems.push({
+      targetKey,
       platform: target.platformName,
       platformCode: target.platformCode,
       accountId: target.platformAccountId,
@@ -580,24 +672,25 @@ export async function submitPublishAnswers(params: {
     const record = getDraftOrThrow(params.draftId);
     const requirements = await buildDraftRequirements(record);
     const nextAnswers = structuredClone(record.answers);
-    const platformLookup = new Map<string, string>();
-
-    for (const target of record.targets) {
-      platformLookup.set(target.platformCode, target.platformCode);
-      platformLookup.set(target.platformInput, target.platformCode);
-      platformLookup.set(target.platformName, target.platformCode);
-    }
+    const targetLookup = buildAnswerTargetLookup(record.targets);
 
     for (const [platformKey, answers] of Object.entries(params.answers || {})) {
-      const platformCode = platformLookup.get(platformKey);
-      if (!platformCode) {
+      const normalizedKey = platformKey.trim();
+      const targetKey = targetLookup.get(normalizedKey);
+      if (targetKey === undefined) {
         return {
           success: false,
-          message: `草稿中不存在平台 ${platformKey}，请只按草稿里的目标平台提交字段答案。`,
+          message: `草稿中不存在目标 ${normalizedKey}，请使用 requirements 返回的 targetKey、platformAccountId 或单账号平台别名提交字段答案。`,
         };
       }
-      nextAnswers[platformCode] = {
-        ...(nextAnswers[platformCode] || {}),
+      if (targetKey === null) {
+        return {
+          success: false,
+          message: `目标 ${normalizedKey} 对应多个账号，请改用 requirements 返回的 targetKey 或 platformAccountId 提交字段答案。`,
+        };
+      }
+      nextAnswers[targetKey] = {
+        ...(nextAnswers[targetKey] || {}),
         ...answers,
       };
     }
@@ -649,6 +742,7 @@ export async function previewPublishDraft(params: { draftId: string }): Promise<
       messageSections.push(
         [
           `【${item.platform} / ${item.accountName}】`,
+          `目标键: ${item.targetKey}`,
           `标题: ${item.title}`,
           `正文预览: ${item.body}`,
           `素材: ${item.mediaSummary.join("，")}`,
@@ -684,7 +778,7 @@ async function buildAccountFormFromDraft(
   record: PublishDraftRecord,
   target: ResolvedPlatformAccount,
 ): Promise<Record<string, unknown>> {
-  const answers = record.answers[target.platformCode] || {};
+  const answers = record.answers[getTargetKey(target)] || {};
   const { contentPublishForm } = buildPlatformContentForm(record.input, target, record.publishType, answers);
   const accountForm: Record<string, unknown> = {
     platformAccountId: target.platformAccountId,
@@ -696,7 +790,7 @@ async function buildAccountFormFromDraft(
     const cover = getCoverMedia(record.input.media);
 
     if (!video || !cover) {
-      throw new Error(`${target.platformName} 的视频或封面素材缺失`);
+      throw new Error(`${formatTargetLabel(target)} 的视频或封面素材缺失`);
     }
 
     const videoAsset = await draftDependencies.toVideoPublishAsset(video);
@@ -712,7 +806,7 @@ async function buildAccountFormFromDraft(
     const images = getContentImages(record.input.media);
 
     if (images.length === 0) {
-      throw new Error(`${target.platformName} 的图片素材缺失`);
+      throw new Error(`${formatTargetLabel(target)} 的图片素材缺失`);
     }
 
     const imageAssets = await Promise.all(
@@ -730,7 +824,7 @@ async function buildAccountFormFromDraft(
 
   const cover = getCoverMedia(record.input.media);
   if (!cover) {
-    throw new Error(`${target.platformName} 的文章封面缺失`);
+    throw new Error(`${formatTargetLabel(target)} 的文章封面缺失`);
   }
 
   const coverAsset = await draftDependencies.toImagePublishAsset(cover, "cover");
