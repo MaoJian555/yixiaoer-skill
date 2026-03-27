@@ -1,12 +1,12 @@
 # openclaw 蚁小二发布插件
 
-用于调用蚁小二发布能力，实现多平台内容分发与发布相关查询。
+用于在 OpenClaw 中通过蚁小二完成多平台内容发布。当前仓库只保留一套流程：`upload_media -> create/update draft -> requirements -> answers -> preview -> publish`。
 
 ## 前置条件
 
-1. 注册蚁小二账号，并在后台绑定自媒体账号
-2. 在插件配置中填写 `apiKey` (从蚁小二后台获取)
-3. 插件会自动在请求头 `Authorization` 中携带该 Key 进行鉴权
+1. 注册蚁小二账号，并在后台绑定目标平台账号
+2. 在插件配置中填写 `apiKey`
+3. 发布前确认相关账号已登录且具备对应平台权限
 
 ## 安装与构建
 
@@ -15,141 +15,124 @@ npm install
 npm run build
 ```
 
-## 配置（仅本地测试）
+运行环境要求：
 
-- `YIXIAOER_API_KEY` 蚁小二 API Key
-- `YIXIAOER_TEST_VIDEO` 本地测试视频路径
+- Node.js `>=22.14.0`
+- OpenClaw `>=2026.3.22`
+- 蚁小二可用 `apiKey`
 
-## 支持的动作
+## OpenClaw 插件接入说明
 
-> **核心能力**：本插件提供多平台内容发布核心能力，包括视频发布、图文发布、文章发布等。
-> **非核心能力**：其他接口（如团队管理、用户管理、素材库管理、媒体账号管理等）可通过 [llms.txt](./llms.txt) 识别。
+- 插件入口使用 OpenClaw 官方 `definePluginEntry`
+- 发布相关工具按 `optional` 方式注册，避免默认暴露带副作用的上传与发布能力
+- 在 OpenClaw 中使用前，需要把插件 id `openclaw-yixiaoer` 或对应工具名加入 `tools.allow`
 
-- `list_accounts` 获取账号列表（loginStatus=1）
-- `account_overviews` 账号概览（新版）
-- `content_overviews` 作品数据列表
-- `publish_video` 发布视频
-- `publish_image_text` 发布图文
-- `publish_article` 发布文章
-- `get-publish-records` 获取发布记录
-- `upload_url` 获取上传 URL
+### 安装插件
 
-注意：`publish` 为内部接口，不对外暴露。针对不同内容类型，请根据意图选择 `publish_video`、`publish_image_text` 或 `publish_article`。
+```bash
+openclaw plugins install @yixiaoermail/openclaw-yixiaoer
+```
 
-## 发布流程（标准）
+### 最小配置示例
 
-1. `list_accounts` 获取有效账号列表
-2. 匹配 `platformAccountId`
-3. 按需准备素材（若为本地文件，先通过 `upload_url` 获 Key）
-4. 检查账号发布能力（见下表：平台与支持的发布类型）
-5. 组装表单调用对应发布接口（`publish_video` / `publish_image_text` / `publish_article`）
-
-## account\_overviews 参数
-
-- `platform`（必填，平台中文名）
-- `page` / `size`
-- `name` / `group`
-- `loginStatus`（默认 1）
-
-## content\_overviews 参数
-
-- `platformAccountId` / `publishUserId`
-- `platform`（平台中文名）
-- `type`（all/video/miniVideo/dynamic/article）
-- `title`
-- `publishStartTime` / `publishEndTime`（时间戳）
-- `page` / `size`
-
-## 平台与支持的发布类型
-
-支持视频发布：
-抖音、快手、小红书、微信视频号、新浪微博、腾讯微视、知乎、企鹅号、搜狐号、一点号、网易号、爱奇艺、哔哩哔哩、百家号、头条号、大鱼号、搜狐视频、皮皮虾、腾讯视频、多多视频、美拍视频、ACFun视频、小红书商家号、车家号视频、易车号视频、蜂网视频、得物、美柚视频
-
-支持图文发布：
-抖音、快手、新浪微博、小红书、微信视频号、百家号、知乎、头条
-
-支持文章发布：
-爱奇艺、百家号、头条号、新浪微博、知乎、企鹅号、搜狐号、一点号、网易号、大鱼号、快传号、雪球号、哔哩哔哩、微信公众号、豆瓣、CSDN、AcFun、简书、车家号、易车号文章
-
-## 素材处理规则
-
-远程素材示例：
-
-```json
+```json5
 {
-  "path": "https://example.com/image.jpg",
-  "width": 1920,
-  "height": 1080,
-  "size": 1024000
+  plugins: {
+    entries: {
+      "openclaw-yixiaoer": {
+        apiKey: "YOUR_YIXIAOER_API_KEY"
+      }
+    }
+  },
+  tools: {
+    allow: ["openclaw-yixiaoer"]
+  }
 }
 ```
 
-本地素材：
+说明：
 
-1. 先调用 `upload_url` 获取 key
-2. 使用 key 进行发布
+- `tools.allow` 写插件 id `openclaw-yixiaoer` 时，会一次性允许该插件注册的全部 optional 工具
+- 如果只想放开部分能力，也可以只允许单个工具名，例如 `upload_media`、`preview_publish_draft`
 
-```json
+### 按工具名精细放开示例
+
+```json5
 {
-  "key": "upload/key/path.jpg",
-  "width": 1920,
-  "height": 1080,
-  "size": 1024000
+  tools: {
+    allow: [
+      "upload_media",
+      "create_publish_draft",
+      "get_publish_requirements",
+      "submit_publish_answers",
+      "preview_publish_draft",
+      "publish_draft"
+    ]
+  }
 }
 ```
 
-视频素材必须包含 `duration`，封面需从视频截图：
+## 当前目录
 
-```json
-{
-  "path": "https://example.com/video.mp4",
-  "width": 1920,
-  "height": 1080,
-  "size": 10240000,
-  "duration": 30
-}
+- `src/index.ts` 插件入口
+- `src/openclaw-tools/` OpenClaw 工具注册，内部拆分为 schema、工具定义、注册入口
+- `src/publish/` 草稿驱动发布流程
+- `src/api/` 蚁小二 API 客户端
+- `src/config/` 平台规则与表单 schema
+- `src/schema/` OpenClaw 参数 schema 转换
+- `skills/openclaw-yixiaoer/tools.md` Prompt 参考文档
+
+## 暴露的工具
+
+- `upload_media`
+- `create_publish_draft`
+- `update_publish_draft`
+- `get_publish_requirements`
+- `submit_publish_answers`
+- `preview_publish_draft`
+- `publish_draft`
+
+## 标准流程
+
+1. 先用 `upload_media` 把本地文件或远程 URL 变成可复用素材 `key`
+2. 用 `create_publish_draft` 建立统一草稿
+3. 用 `get_publish_requirements` 获取各平台仍需补齐的字段
+4. 必要时用 `submit_publish_answers` 回填平台答案
+5. 用 `preview_publish_draft` 确认最终预览
+6. 用户确认后调用 `publish_draft`
+
+如果内容、平台、账号或素材发生变化，用 `update_publish_draft` 更新后重新拉取 requirements。
+
+## 草稿字段
+
+- `title` 可选标题
+- `body` 正文内容
+- `media[]` 已上传素材列表
+- `tags[]` 话题标签
+- `scheduleAt` 定时发布时间戳
+- `platforms[]` 目标平台列表
+- `platformAccountIds` 平台到账号 ID 的映射
+- `publishType` 可选内容类型
+- `publishChannel` / `clientId` 发布通道信息
+
+平台专属字段不再允许直接手写底层 `contentPublishForm`。所有平台差异都通过 `get_publish_requirements` 与 `submit_publish_answers` 协商完成。
+
+## 设计原则
+
+- 只保留草稿协议，不再支持旧的自由态发布入口
+- 草稿只接受稳定的跨平台字段
+- 平台字段必须先协商，再预览，再发布
+- 未接入的字段能力会明确返回限制说明
+- 预览和正式发布都基于同一份已校验草稿
+
+## 已知限制
+
+- `location` 等动态字段当前只会返回限制说明，暂未开放直接填写
+- 若同平台存在多个已登录账号，必须通过 `platformAccountIds` 明确指定
+- 发布草稿是进程内短生命周期状态，进程重启后需要重新建立
+
+## 验证
+
+```bash
+npm run verify
 ```
-
-## 发布参数规则
-
-| 字段                  | 说明         | 必填        | 规则                                |
-| ------------------- | ---------- | --------- | --------------------------------- |
-| `title`             | 标题         | 是         | 最大 50 字                           |
-| `description`       | 描述         | 是         | 最大 2000 字                         |
-| `platforms`         | 发布平台数组     | 是         | 例如 `["抖音", "小红书"]`                |
-| `platformAccountId` | 平台账号 ID    | 是         | 来自 `list_accounts` 的 `id`         |
-| `publishType`       | 内容类型       | 是         | `article` / `imageText` / `video` |
-| `clientId`          | 客户端 ID     | **云发布：否** | 云发布传 `null`，本机发布传设备 ID            |
-| `coverKey`          | 封面 OSS Key | 否         | 与 `coverPath` 二选一                 |
-| `coverPath`         | 封面路径/URL   | 否         | 与 `coverKey` 二选一                  |
-| `videoPath`         | 视频路径/URL   | 否         | `video` 类型必填                      |
-
-> ⚠️ **重要提示**：云发布（默认）时，`clientId` 必须设置为 `null`（不是空字符串），表示不需要客户端在线即可发布。
-
-### publishChannel
-
-- `cloud`（默认）：云端自动发布，**无需客户端在线**，但需要设置 `clientId: null`
-- `local`：本机发布，需填写 `clientId`（设备ID）并保持蚁小二客户端在线
-
-## 发布类型最小必填字段
-
-`video`
-
-- `title` / `description`
-- `videoPath`
-- `platforms`
-- `platformAccountId`
-
-`imageText`
-
-- `title` / `description`
-- `imagePaths`
-- `platforms`
-- `platformAccountId`
-
-`article`
-
-- `title` / `description`
-- `platforms`
-- `platformAccountId`
-

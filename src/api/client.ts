@@ -4,18 +4,14 @@ import type {
   ApiResponse,
   MediaAccount,
   TeamInfo,
-  ListGroupsParams,
-  Group,
 } from "../../types.d.ts";
 
 let configuredApiKey: string | null = null;
 
 export class YixiaoerClient {
   private client: AxiosInstance;
-  private config: YixiaoerConfig;
 
   constructor(config: YixiaoerConfig) {
-    this.config = config;
     this.client = axios.create({
       baseURL: config.baseUrl,
       timeout: 30000,
@@ -103,73 +99,10 @@ export class YixiaoerClient {
     );
   }
 
-  async getAccountOverviewsV2(params: {
-    platform: string;
-    page?: number;
-    size?: number;
-    name?: string;
-    group?: string;
-    loginStatus?: number;
-  }): Promise<{
-    data: any[];
-    page: number;
-    size: number;
-    totalSize: number;
-    totalPage: number;
-  }> {
-    return this.request("GET", "/platform-accounts/overviews-v2", params);
-  }
-
-  async getContentOverviews(params?: {
-    platformAccountId?: string;
-    publishUserId?: string;
-    platform?: string;
-    type?: "all" | "video" | "miniVideo" | "dynamic" | "article";
-    title?: string;
-    publishStartTime?: number;
-    publishEndTime?: number;
-    page?: number;
-    size?: number;
-  }): Promise<{
-    data: any[];
-    headData: Array<{ name: string; key: string }>;
-    page: number;
-    size: number;
-    totalSize: number;
-    totalPage: number;
-  }> {
-    return this.request(
-      "GET",
-      "/contents/overviews",
-      params || { page: 1, size: 10 },
-    );
-  }
-
-  async getPublishRecords(params?: {
-    page?: number;
-    size?: number;
-  }): Promise<any> {
-    return this.request("GET", "/taskSets", params || { page: 1, size: 20 });
-  }
-
   async getPublishPreset(platformAccountId: string): Promise<any> {
     return this.request(
       "GET",
       `/v2/platform/accounts/${platformAccountId}/publish-preset`,
-    );
-  }
-
-  async getGroups(params?: ListGroupsParams): Promise<{
-    data: Group[];
-    page: number;
-    size: number;
-    totalSize: number;
-    totalPage: number;
-  }> {
-    return this.request(
-      "GET",
-      "/groups",
-      params || { page: 1, size: 10 },
     );
   }
 
